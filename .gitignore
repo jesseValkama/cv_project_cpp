@@ -1,0 +1,30 @@
+# Build folders
+/out/
+/bin/
+/lib/
+
+# Visual Studio
+*.vcxproj*
+*.sln
+*.user
+*.obj
+*.pdb
+*.log
+.vs
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# DLLs and executables
+*.dll
+*.exe
+
+# Libraries
+/libtorch/
+/opencv/
+
+# OS junk
+.DS_Store
+Thumbs.db

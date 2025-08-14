@@ -15,7 +15,8 @@
 #include <vector>
 #include <random>
 
-// __getitem__
+// TOOD: install torchvision to get most basic augmentations working
+
 Example MnistDataset::get(size_t i)
 {
 	std::string path = mnistOpts.datasetPath + data[i].first;
@@ -52,24 +53,21 @@ Example MnistDataset::get(size_t i)
 	return { tdata, tlabel };
 }
 
-// __len__
 torch::optional<size_t> MnistDataset::size() const
 {
 	return data.size();
 }
 
-// __init__ but as a function
 std::pair<Data, Data> readInfo(void)
 {
 	std::random_device randDev;
 	std::mt19937 mersenneTwisterGenerator(randDev());
 	Data train, val, test;
 	
-	assert(false);
-	std::ifstream stream(mnistOpts.infoFilePath);
+	std::ifstream stream(mnistOpts.infoFilePath, std::ios::binary);
 	assert(stream.is_open());
 	
-	long label;
+	int64_t label;
 	std::string path, type;
 	while (true)
 	{

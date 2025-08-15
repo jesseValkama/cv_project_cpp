@@ -1,99 +1,111 @@
 #include "loader_funcs.h"
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <torch/torch.h>
-
-#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <stdint.h>
 #include <string>
-#include <tuple>
 #include <vector>
 
-int load_mnist(std::string path, int64_t label, int imgSize, Example &o)
+uint32_t swap_endian(uint32_t val)
 {
-	cv::Mat img = cv::imread(path);
-	if (img.empty())
+	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+	return (val << 16) | (val >> 16);
+}
+
+int check_magic(std::ifstream &fimg, std::ifstream &flabel, uint32_t labelMagic, uint32_t imgMagic, int len)
+{
+	uint32_t magic = 0;
+	fimg.read(reinterpret_cast<char*>(&magic), len);
+	magic = swap_endian(magic);
+	if (magic != imgMagic)
 	{
-		std::cout << "unable to load an image" << std::endl;
+		std::cout << "The img magic is incorrect" << "\n";
 		return 1;
 	}
-
-	cv::resize(img, img, cv::Size(imgSize, imgSize));
-	std::vector<cv::Mat> channels(3);
-	cv::split(img, channels);
-
-	auto B = torch::from_blob
-	(
-		channels[0].ptr(),
-		{ imgSize, imgSize },
-		torch::kUInt8
-	);
-	auto G = torch::from_blob
-	(
-		channels[1].ptr(),
-		{ imgSize, imgSize },
-		torch::kUInt8
-	);
-	auto R = torch::from_blob
-	(
-		channels[2].ptr(),
-		{ imgSize, imgSize },
-		torch::kUInt8
-	);
-
-	auto tdata = torch::cat({ R, G, B })
-		.view({ 3, imgSize, imgSize })
-		.to(torch::kFloat);
-	auto tlabel = torch::tensor(label, torch::kLong);
-	o = { tdata, tlabel };
-
+	flabel.read(reinterpret_cast<char*>(&magic), len);
+	magic = swap_endian(magic);
+	if (magic != labelMagic)
+	{
+		std::cout << "The label magic is incorrect" << "\n";
+		return 2;
+	}
 	return 0;
 }
 
-int load_mnist_info(std::string fname, uint8_t trainProb, std::tuple<Data, Data, Data> &o)
+int check_labels(std::ifstream &fimg, std::ifstream &flabel, uint32_t &n, int len)
 {
-	assert(trainProb <= 100);
-	Data train, val, test;
-	
-	std::ifstream stream(fname, std::ios::binary); 
-	if (!stream.is_open())
+	uint32_t nImgs = 0, nLables = 0;
+	fimg.read(reinterpret_cast<char*>(&nImgs), len);
+	flabel.read(reinterpret_cast<char*>(&nLabels), len);
+	nImgs = swap_endian(nImgs);
+	nLabels = swap_endian(nLabels);
+	if (nImgs != nLabels)
 	{
-		std::cout << "Could not open file, like due to inproper filename" << std::endl;
+		std::cout << "n of labels doesn't correspond the the n of imgs" << "\n";
+		return 1;
+	}
+	n = nImgs;
+	return 0;
+}
+
+int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows, 
+	uint32_t &cols, uint32_t minSize, uint32_t maxSize, int len)
+{
+	fimg.read(reinterpret_cast<char*>(&rows), len);
+	flabel.read(reinterpret_cast<char*>(&cols), len);
+	rows = swap_endian(rows);
+	cols = swap_endian(cols);
+	uint32_t size = rows * cols;
+	if (size < minSize || size > maxSize)
+	{
+		std::cout << "Weird img size" << "\n";
 		return 1;
 	}
 	
-	int64_t label;
-	std::string path, type;
-	while (true)
+	return 0;
+}
+
+int load_mnist_info(std::string fimgname, std::string flabelname, Info &o, std::string type)
+{
+	std::ifstream fimg(fimgname, std::ios::in | std::ios::binary);
+	std::ifstream flabel(flabelname, std::ios::in | std::ios::binary);
+
+	if (!(flabel.is_open() && fimg.is_open()))
 	{
-		stream >> path >> label >> type;
-		
-		// MNIST dataset has train and val already predefined, so i use those
-		// however, there is no val predefined, so it is predefined at random
-		if (type == "train")
-		{
-			if (std::rand() % 101 >= trainProb)
-			{
-				train.push_back(std::make_pair(path, label));
-			}
-			else
-			{
-				val.push_back(std::make_pair(path, label));
-			}
-		}
-		else if (type == "test")
-		{
-			test.push_back(std::make_pair(path, label));
-		}
-		if (stream.eof())
-		{
-			break;
-		}
+		std::cout << "Could not open the stream" << "\n";
+		return 1;
+	}
+
+	uint32_t n = 0, rows = 0, cols = 0;
+	int status = 0;
+	status = check_magic(fimg, flabel, 2049, 2051);
+	if (status != 0)
+	{
+		return status;
+	}
+	status = check_labels(fimg, flabel, n);
+	if (status != 0)
+	{
+		return status;
+	}
+	status = check_imgs(fimg, flabel, rows, cols, 784, 784);
+	if (status != 0)
+	{
+		return status;
 	}
 	
-	o = std::make_tuple(train, val, test);
+	char label;
+	int pos = 0;
+	int size = static_cast<int>(rows) * static_cast<int>(cols);
+	// naive since, it expects all images to be the same size
+	for (int i = 0; i < n; ++i)
+	{
+		flabel.read(&label, 1);
+		pos = fimg.tellg();
+		o.push_back(std::make_pair(pos, label);
+		pos += size;
+		fimg.seekg(pos, std::ios::beg);
+	}
+
 	return 0;
 }

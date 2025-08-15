@@ -1,8 +1,10 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include <stdint.h>
+#include <string>
+
 #include <torch/torch.h>
-#include <iostream>
 
 struct Settings
 {

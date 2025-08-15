@@ -13,3 +13,8 @@ project ("application_project")
 
 # Include sub-projects.
 add_subdirectory ("application_project")
+
+message(STATUS "\n\nThis is the start of the flags\n")
+message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}\n\n")

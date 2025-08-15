@@ -10,7 +10,7 @@
 *.obj
 *.pdb
 *.log
-.vs
+.vs/
 
 # CMake
 CMakeFiles/

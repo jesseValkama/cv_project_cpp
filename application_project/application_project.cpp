@@ -7,13 +7,14 @@
 
 int main(void)
 {
+	
 	Settings opts;
-
+	
 	int ret = 0;
 	ret = lenet_loop(opts);
-	if (ret == 1)
+	if (ret != 0)
 	{
-		return 1;
+		return ret;
 	}
 
 	return 0;

@@ -8,6 +8,7 @@
 #include <torch/torch.h>
 
 #include "../datasets/mnist.h"
+#include "../datasets/loader_funcs.h"
 #include "../models/lenet.h"
 #include "../settings.h"
 #include "common.h"

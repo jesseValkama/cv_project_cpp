@@ -1,26 +1,63 @@
-#ifndef LOADMNIST_H
+#ifndef LOADMNIST_H 
 #define LOADMNIST_H
-
-#include <torch/torch.h>
 
 #include <stdint.h>
 #include <string>
-#include <tuple>
 #include <vector>
 
-typedef std::vector<std::pair<std::string, int64_t>> Data;
-typedef torch::data::Example<> Example;
+#include <torch/torch.h>
 
-int load_mnist(std::string path, int64_t label, int imgSize, Example &o);
+typedef std::vector<std::pair<int, char>> Info;
+
 /*
-* This function is used to load mnist dataset
-* return statements indicate conditions
+* Most of this file is inspired by the code from this post: 
+* https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c 
+* However, the code is modified (and safer?)
 */
 
-int load_mnist_info(std::string fname, uint8_t trainProb, std::tuple<Data, Data, Data> &o);
+uint32_t swap_endian(uint32_t val);
 /*
-* This function is used to load mnist dataset info
-* return statements indicate conditions
+* Helper function to decode information
+* Credit: https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c 
+*/
+
+int check_magic(std::ifstream& fimg, std::ifstream& flabel, uint32_t labelMagic, uint32_t imgMagic, int len);
+/*
+* Helper function to check magic validity
+* Potentially unsafe
+* 
+* Return indicates conditions:
+*/
+
+int check_labels(std::ifstream& fimg, std::ifstream& flabel, uint32_t& n, int len);
+/*
+* Helper function to check the number of labels and images
+* Potentially unsafe
+* 
+* Return indicates conditions:
+*/
+
+int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t& rows,
+	uint32_t& cols, uint32_t minSize, uint32_t maxSize, int len);
+/*
+* Helper function to get img sizes
+* Potentially unsafe
+* 
+* Return indicates conditions
+*/
+
+int load_mnist_info(std::string fimgname, std::string flabelname, Info& o, std::string type);
+/*
+* Naive function to read mnist info
+* Expects the img size to ALWAYS be 28x28
+* Potentially unsafe
+* 
+* Returns condition,
+* 0: everything is fine
+* 1: could not open a file
+* 
+* Crash:
+* a fatal buffer overflow
 */
 
 #endif

@@ -39,8 +39,8 @@ int vis_mnist(const char *flabelname, const char *fimgname)
 	* data to identify it (magic?)
 	*/
 
-	std::ifstream flabel(flabelname, std::ios::in | std::ios::binary);
 	std::ifstream fimg(fimgname, std::ios::in | std::ios::binary);
+	std::ifstream flabel(flabelname, std::ios::in | std::ios::binary);
 
 	if (!(flabel.is_open() && fimg.is_open()))
 	{
@@ -53,17 +53,18 @@ int vis_mnist(const char *flabelname, const char *fimgname)
 	
 	flabel.read(reinterpret_cast<char*>(&magic), 4);
 	magic = swap_endian(magic);
+	if (magic != labelMagicNum)
+	{
+		std::cout << "Incorrect label magic" << "\n";
+		return 2;
+	}
 	fimg.read(reinterpret_cast<char*>(&magic), 4);
 	magic = swap_endian(magic);
 	if (magic != imgMagicNum)
 	{
 		std::cout << "Incorrect img magic" << "\n";
+		return 2;
 	}
-	if (magic != labelMagicNum)
-	{
-		std::cout << "Incorrect label magic" << "\n";
-	}
-	
 
 	fimg.read(reinterpret_cast<char*>(&numImgs), 4);
 	numImgs = swap_endian(numImgs);
@@ -72,7 +73,7 @@ int vis_mnist(const char *flabelname, const char *fimgname)
 	if (numImgs != numLabels)
 	{
 		std::cout << "n of labels doesn't correspond the the n of imgs" << "\n";
-		return 2;
+		return 3;
 	}
 
 	fimg.read(reinterpret_cast<char*>(&rows), 4);
@@ -83,23 +84,29 @@ int vis_mnist(const char *flabelname, const char *fimgname)
 	if (!(rows == 28 && cols == 28))
 	{
 		std::cout << "Weird img size" << "\n";
-		return 3;
+		return 4;
 	}
 
-	char label = 0;
-	std::string sLabel;
-	std::unique_ptr<char*> pixels = std::make_unique<char*>();
-
+	char label;
+	std::vector<char> buffer(rows * cols);
+	int key = 0;
 	cv::namedWindow("mnist", cv::WINDOW_AUTOSIZE);
+	
+	for (int i = 0; i < numImgs; ++i)
+	{
+		fimg.read(buffer.data(), rows * cols);
+		flabel.read(&label, 1);
 
-	fimg.read(*pixels, rows * cols);
-	flabel.read(&label, 1);
-
-	sLabel = std::to_string(int(label));
-	cv::Mat img(rows, cols, CV_8UC1, *pixels);
-	cv::resize(img, img, cv::Size(100, 100));
-	cv::imshow(sLabel, img);
-	cv::waitKey(0);
-
+		cv::Mat img(rows, cols, CV_8UC1, buffer.data());
+		cv::resize(img, img, cv::Size(100, 100));
+		cv::imshow("mnist", img);
+		key = cv::waitKey(0);
+		if (key == 27)
+		{
+			std::cout << "Stopping" << "\n";
+			break;
+		}
+	}
+	
 	return 0;
 }

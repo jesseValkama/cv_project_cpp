@@ -7,21 +7,13 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
+#include "loader_funcs.h"
 
 /*
 * I have little experience with lowlevel reading files, so i am trying it out here first to get something working
 * Credit: https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c 
 * Though I have done some of my own changes
 */
-
-uint32_t swap_endian(uint32_t val)
-{
-	/*
-	*/
-
-	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
-	return (val << 16) | (val >> 16);
-}
 
 int vis_mnist(const char *flabelname, const char *fimgname)
 {

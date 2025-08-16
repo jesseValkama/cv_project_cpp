@@ -5,9 +5,19 @@
 #include <string>
 #include <vector>
 
+#include <opencv2/opencv.hpp>
 #include <torch/torch.h>
 
+#include "../settings.h"
+
 typedef std::vector<std::pair<int, char>> Info;
+typedef torch::data::Example<> Example;
+
+/*
+* TODO:
+* change functions from into return oriented
+* improve safety
+*/
 
 /*
 * Most of this file is inspired by the code from this post: 
@@ -46,7 +56,7 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t& rows,
 * Return indicates conditions
 */
 
-int load_mnist_info(std::string fimgname, std::string flabelname, Info& o, std::string type);
+int load_mnist_info(MnistOpts& opts, Info& o, std::string type);
 /*
 * Naive function to read mnist info
 * Expects the img size to ALWAYS be 28x28
@@ -58,6 +68,15 @@ int load_mnist_info(std::string fimgname, std::string flabelname, Info& o, std::
 * 
 * Crash:
 * a fatal buffer overflow
+*/
+
+std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols);
+/*
+* Naive function to load mnist img
+* Requires info from load_mnist_info
+* 
+* Throws runtime_error
+* if either stream nor img could be opened
 */
 
 #endif

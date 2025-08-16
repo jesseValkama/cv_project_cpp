@@ -6,28 +6,30 @@
 
 #include <torch/torch.h>
 
-struct Settings
+struct MnistOpts
 {
-	size_t maxEpochs = 30;
-	size_t valInterval = 4;
-	float learningRate = 0.001;
-	int numOfChannels = 10;
-	size_t IntervalsBeforeEarlyStopping = 5;
-	bool automatedMixedPrecision = false;
-};
+	std::string fimgname = "D:/datasets/mnist/t10k-images.idx3-ubyte";
+	std::string flabelname = "D:/datasets/mnist/t10k-labels.idx1-ubyte";
+	torch::Device dev = torch::kCUDA;
 
-struct MnistOptions
-{
-	int imgSize = 32;
+	int imgsz = 28;
 	size_t trainBS = 8;
 	size_t valBS = 8;
 	size_t testBS = 8;
 	size_t iters = 10;
 	size_t interval = 64;
 
-	std::string datasetPath = "";
-	std::string infoFilePath = "";
-	torch::Device dev = torch::kCUDA;
+};
+
+struct Settings
+{
+	MnistOpts mnistOpts;
+	size_t maxEpochs = 30;
+	size_t valInterval = 4;
+	float learningRate = 0.001;
+	int numOfChannels = 10;
+	size_t IntervalsBeforeEarlyStopping = 5;
+	bool automatedMixedPrecision = false;
 };
 
 #endif

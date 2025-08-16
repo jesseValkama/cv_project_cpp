@@ -18,12 +18,20 @@ namespace nn = torch::nn;
 int lenet_loop(Settings &opts)
 {
 	LeNet model(opts.numOfChannels);
+	MnistOpts mnistOpts = opts.mnistOpts;
 	model->to(mnistOpts.dev);
 	
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
 	// incase i am not done with this, i am overfitting to debug
-	const auto data = readInfo(); // this needs to be improved
-	auto dataset = MnistDataset(data.first).map(torch::data::transforms::Stack<>());
+	Info trainInfo, testInfo;
+	int status = 0;
+	status = load_mnist_info(opts.mnistOpts, trainInfo, "train");
+	if (status != 0)
+	{
+		return status;
+	}
+
+	auto dataset = MnistDataset(trainInfo, mnistOpts).map(torch::data::transforms::Stack<>());
 	auto trainSize = dataset.size().value();
 	auto dataloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
 		(
@@ -40,7 +48,7 @@ int lenet_loop(Settings &opts)
 		return 1;
 	}
 
-	ret = lenet_test(model, *dataloader, lossFn);
+	ret = lenet_test(model, *dataloader, lossFn, opts);
 	if (ret == 1)
 	{
 		std::cout << "The testing failed, fatal" << std::endl;
@@ -54,6 +62,7 @@ template<typename Dataloader>
 int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 	torch::optim::Optimizer &optimiser, nn::CrossEntropyLoss &lossFn, Settings &opts)
 {
+	MnistOpts mnistOpts = opts.mnistOpts;
 	model->train();
 	int ret = 0;
 	float bestValLoss = std::numeric_limits<float>::infinity();
@@ -96,7 +105,7 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 
 		if (epoch % opts.valInterval == 0)
 		{
-			ret = lenet_val(model, valloader, bestValLoss, lossFn, valImprov);
+			ret = lenet_val(model, valloader, bestValLoss, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
 				std::cout << "The training failed, fatal" << std::endl;
@@ -114,8 +123,9 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 }
 
 template<typename Dataloader>
-int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp)
+int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
+	MnistOpts mnistOpts = opts.mnistOpts;
 	model->eval();
 	int i = 0;
 	float valLoss = 0.0;
@@ -155,8 +165,9 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 }
 
 template<typename Dataloader>
-int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossFn)
+int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossFn, Settings &opts)
 {
+	MnistOpts mnistOpts = opts.mnistOpts;
 	//todo make the entire functino
 	model->eval();
 	int i = 0;

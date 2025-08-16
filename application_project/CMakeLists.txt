@@ -3,7 +3,7 @@
 # Add source to this project's executable.
 
 add_executable (application_project "application_project.cpp" "application_project.h" 
-                                    "datasets/tmp.cpp"
+                                    "datasets/loader_funcs.cpp" "datasets/tmp.cpp"
                                     "settings.cpp"
                                     "models/common.cpp" "models/lenet.cpp"
                                     "datasets/mnist.cpp"

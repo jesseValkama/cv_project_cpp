@@ -5,10 +5,18 @@
 #include "functions/common.h"
 #include "functions/train_lenet.h"
 
+#include "datasets/tmp.h"
+
 int main(void)
 {
 	
 	Settings opts;
+	int tmp = 0;
+	tmp = vis_mnist();
+	if (tmp != 0)
+	{
+		return tmp;
+	}
 	
 	int ret = 0;
 	ret = lenet_loop(opts);

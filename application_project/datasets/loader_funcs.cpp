@@ -1,7 +1,11 @@
 #include "loader_funcs.h"
 
+#include <opencv2/opencv.hpp>
+
+#include <cassert>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -34,7 +38,7 @@ int check_magic(std::ifstream &fimg, std::ifstream &flabel, uint32_t labelMagic,
 
 int check_labels(std::ifstream &fimg, std::ifstream &flabel, uint32_t &n, int len)
 {
-	uint32_t nImgs = 0, nLables = 0;
+	uint32_t nImgs = 0, nLabels = 0;
 	fimg.read(reinterpret_cast<char*>(&nImgs), len);
 	flabel.read(reinterpret_cast<char*>(&nLabels), len);
 	nImgs = swap_endian(nImgs);
@@ -52,7 +56,7 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows,
 	uint32_t &cols, uint32_t minSize, uint32_t maxSize, int len)
 {
 	fimg.read(reinterpret_cast<char*>(&rows), len);
-	flabel.read(reinterpret_cast<char*>(&cols), len);
+	fimg.read(reinterpret_cast<char*>(&cols), len);
 	rows = swap_endian(rows);
 	cols = swap_endian(cols);
 	uint32_t size = rows * cols;
@@ -65,10 +69,10 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows,
 	return 0;
 }
 
-int load_mnist_info(std::string fimgname, std::string flabelname, Info &o, std::string type)
+int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 {
-	std::ifstream fimg(fimgname, std::ios::in | std::ios::binary);
-	std::ifstream flabel(flabelname, std::ios::in | std::ios::binary);
+	std::ifstream fimg(opts.fimgname, std::ios::in | std::ios::binary);
+	std::ifstream flabel(opts.flabelname, std::ios::in | std::ios::binary);
 
 	if (!(flabel.is_open() && fimg.is_open()))
 	{
@@ -78,17 +82,17 @@ int load_mnist_info(std::string fimgname, std::string flabelname, Info &o, std::
 
 	uint32_t n = 0, rows = 0, cols = 0;
 	int status = 0;
-	status = check_magic(fimg, flabel, 2049, 2051);
+	status = check_magic(fimg, flabel, 2049, 2051, 4);
 	if (status != 0)
 	{
 		return status;
 	}
-	status = check_labels(fimg, flabel, n);
+	status = check_labels(fimg, flabel, n, 4);
 	if (status != 0)
 	{
 		return status;
 	}
-	status = check_imgs(fimg, flabel, rows, cols, 784, 784);
+	status = check_imgs(fimg, flabel, rows, cols, 784, 784, 4);
 	if (status != 0)
 	{
 		return status;
@@ -102,10 +106,38 @@ int load_mnist_info(std::string fimgname, std::string flabelname, Info &o, std::
 	{
 		flabel.read(&label, 1);
 		pos = fimg.tellg();
-		o.push_back(std::make_pair(pos, label);
+		o.push_back(std::make_pair(pos, label));
 		pos += size;
 		fimg.seekg(pos, std::ios::beg);
 	}
 
 	return 0;
+}
+
+std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols)
+{
+	std::ifstream fimg(path, std::ios::in | std::ios::binary);
+	if (!fimg.is_open())
+	{
+		std::runtime_error("Could not open the stream");
+	}
+
+	uint32_t imgsz = rows * cols;
+	int pos = d[i].first;
+	char l = d[i].second;
+	std::vector<char> buf(imgsz);
+	fimg.seekg(pos, std::ios::beg);
+	fimg.read(buf.data(), buf.size());
+	cv::Mat img(rows, cols, CV_8UC1, buf.data());
+	if (img.empty())
+	{
+		std::runtime_error("Could not open the img");
+	}
+	cv::resize(img, img, cv::Size(100, 100));
+
+	cv::namedWindow("test", cv::WINDOW_AUTOSIZE);
+	cv::imshow("test", img);
+	cv::waitKey(0);
+
+	return std::make_pair(img, l);
 }

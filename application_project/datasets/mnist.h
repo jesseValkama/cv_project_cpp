@@ -1,26 +1,20 @@
-#ifndef MNIST_H
-#define MNIST_H
+#ifndef MNISTDATASET_H
+#define MNISTDATASET_H
 
 #include <torch/torch.h>
-#include <stdint.h>
 
-#include "../settings.h"
-
-typedef std::vector<std::pair<std::string, int64_t>> Data;
-typedef torch::data::Example<> Example;
-
-static MnistOptions mnistOpts;
+#include "loader_funcs.h"
 
 class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 {
-	const Data data;
+	const Info info;
+	const MnistOpts mnistOpts;
 
 	public:
-		MnistDataset(const Data& data) : data(data) {}
+		MnistDataset(const Info& info, const MnistOpts& mnistOpts) 
+			: info(info), mnistOpts(mnistOpts) {}
 		Example get(size_t i);
 		torch::optional<size_t> size() const;
 };
-
-std::pair<Data, Data> readInfo(void);
 
 #endif

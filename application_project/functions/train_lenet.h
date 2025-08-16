@@ -26,7 +26,7 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 */
 
 template<typename Dataloader>
-int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp);
+int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 
@@ -36,7 +36,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 */
 
 template<typename Dataloader>
-int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossFn);
+int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossFn, Settings &opts);
 /*
 	* The function to test LeNet
 	* 

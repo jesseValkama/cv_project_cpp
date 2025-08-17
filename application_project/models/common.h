@@ -21,7 +21,7 @@ struct ConvBlockParams
 
 struct ConvBlockImpl : torch::nn::Module
 {
-	ConvBlockImpl(const ConvBlockParams &p);
+	ConvBlockImpl(const ConvBlockParams& p);
 	
 	torch::Tensor forward(torch::Tensor x);
 
@@ -31,5 +31,7 @@ struct ConvBlockImpl : torch::nn::Module
 };
 
 TORCH_MODULE(ConvBlock);
+
+int dynamicFC(int imgsz, ConvBlockParams &cb1, ConvBlockParams &cb2);
 
 #endif

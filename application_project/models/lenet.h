@@ -37,7 +37,7 @@ struct LeNetImpl : torch::nn::Module
 	nn::ReLU relu1{ nullptr };
 	nn::ReLU relu2{ nullptr };
 
-	LeNetImpl(int nc);
+	LeNetImpl(int nc, int imgsz);
 	torch::Tensor forward(torch::Tensor x);
 	
 	};

@@ -133,11 +133,6 @@ std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info &
 	{
 		std::runtime_error("Could not open the img");
 	}
-	cv::resize(img, img, cv::Size(100, 100));
-
-	cv::namedWindow("test", cv::WINDOW_AUTOSIZE);
-	cv::imshow("test", img);
-	cv::waitKey(0);
 
 	return std::make_pair(img, l);
 }

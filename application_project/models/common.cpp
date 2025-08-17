@@ -30,3 +30,16 @@ torch::Tensor ConvBlockImpl::forward(torch::Tensor x)
 	x = bn->forward(x);
 	return relu->forward(x);
 }
+
+int dynamicFC(int imgsz, ConvBlockParams &cb1, ConvBlockParams &cb2)
+{
+	// computed only once, since the images are expected to be squares
+	// make changes if the layers change!!!
+	int size = 0;
+	size = (imgsz - cb1.ks + 2 * cb1.p) / (cb1.s) + 1;
+	size = (size - 2) / (2) + 1;
+	size = (size - cb2.ks + 2 * cb2.p) / (cb2.s) + 1;
+	size = (size - 2) / (2) + 1;
+	size = size * size;
+	return 0;
+}

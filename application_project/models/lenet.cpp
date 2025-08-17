@@ -9,7 +9,13 @@
 #include "common.h"
 #include "../settings.h"
 
-LeNetImpl::LeNetImpl(int nc)
+/*
+* TODO:
+* fix the conblock and make the model more modular
+* also change the dynamic sizing computation to be a func
+*/
+
+LeNetImpl::LeNetImpl(int nc, int imgsz)
 {
 	ConvBlockParams cb1 = { 1, 6, 5, 1, 0, 6 };
 	ConvBlockParams cb2 = { 6, 16, 5, 1, 0, 16 };
@@ -27,7 +33,16 @@ LeNetImpl::LeNetImpl(int nc)
 	//conv2 = ConvBlock(cb2);
 	mp2 = nn::MaxPool2d(nn::MaxPool2dOptions(2).stride(2));
 
-	fc1 = nn::Linear(nn::LinearOptions(400,120));
+	// computed only once, since the images are expected to be squares
+	// make changes if the layers change!!!
+	int64_t size = 0;
+	size = (imgsz - cb1.ks + 2 * cb1.p) / (cb1.s) + 1;
+	size = (size - 2) / (2) + 1;
+	size = (size - cb2.ks + 2 * cb2.p) / (cb2.s) + 1;
+	size = (size - 2) / (2) + 1;
+	size = size * size * cb2.out;
+
+	fc1 = nn::Linear(nn::LinearOptions(size,120));
 	relu1 = nn::ReLU(nn::ReLUOptions().inplace(true));
 	fc2 = nn::Linear(nn::LinearOptions(120,84));
 	relu2 = nn::ReLU(nn::ReLUOptions().inplace(true));
@@ -68,7 +83,6 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 
 	x = mp2->forward(x);
 	
-	// changed to view to make it more efficient (possibly)
 	x = x.view({ x.size(0), -1 });
 
 	x = fc1->forward(x);
@@ -77,6 +91,5 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 	x = relu2->forward(x);
 	x = fc3->forward(x);
 
-	// TODO use softmax to get probabilites (inside the model or not?)
 	return x;
 }

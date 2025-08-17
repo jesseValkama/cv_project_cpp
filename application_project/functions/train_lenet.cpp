@@ -17,8 +17,9 @@ namespace nn = torch::nn;
 
 int lenet_loop(Settings &opts)
 {
-	LeNet model(opts.numOfChannels);
+	std::cout << "Starting to train lenet" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
+	LeNet model(opts.numOfChannels, mnistOpts.imgsz);
 	model->to(mnistOpts.dev);
 	
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
@@ -35,8 +36,8 @@ int lenet_loop(Settings &opts)
 	auto trainSize = dataset.size().value();
 	auto dataloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
 		(
-			std::move(dataset), 
-			mnistOpts.trainBS
+			std::move(dataset),
+			torch::data::DataLoaderOptions().batch_size(mnistOpts.trainBS).workers(mnistOpts.numWorkers)
 		);
 	
 	torch::optim::Adam optimiser(model->parameters(), torch::optim::AdamOptions(opts.learningRate));
@@ -63,7 +64,6 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 	torch::optim::Optimizer &optimiser, nn::CrossEntropyLoss &lossFn, Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
-	model->train();
 	int ret = 0;
 	float bestValLoss = std::numeric_limits<float>::infinity();
 	bool valImprov = false;
@@ -72,13 +72,15 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 
 	for (size_t epoch = 1; epoch <= opts.maxEpochs; epoch++)
 	{	
+		std::cout << "Epoch:" << epoch << std::endl;
+		model->train();
+
 		float trainLoss = 0.0;
 		int i = 0;
 		for (auto &batch : trainloader)
 		{
 			auto imgs = batch.data.to(mnistOpts.dev);
 			auto labels = batch.target.to(mnistOpts.dev).view({-1});
-
 			optimiser.zero_grad();
 
 			torch::Tensor outputs = model->forward(imgs);
@@ -88,17 +90,14 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 				std::cout << "Training is unstable, change settings" << std::endl;
 				return 1;
 			}
-
 			loss.backward();
 			optimiser.step();
-			trainLoss += loss.item<float>();
 
+			trainLoss += loss.item<float>();
 			i++;
 		}
 
 		trainLoss /= i;
-
-		std::cout << "Epoch:" << epoch << std::endl;
 
 		// TODO: visualise the train loss with opencv
 		std::cout << "Train loss:" << trainLoss << std::endl;
@@ -150,12 +149,13 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	valLoss /= i;
 	
 	// TODO visualise
-	std::cout << "The loss is:" << valLoss << std::endl;
+	std::cout << "The validation loss is:" << valLoss << std::endl;
 	
 	// < is used to avoid false improvements
 	if (valLoss < bestValLoss)
 	{
-		torch::save(model, "../weights/tmp.pth");
+		// TODO: error handling if the path doesn't exist
+		torch::save(model, mnistOpts.savepath);
 		bestValLoss = valLoss;
 		imp = true;
 		std::cout << "The model improved" << std::endl;
@@ -167,6 +167,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 template<typename Dataloader>
 int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossFn, Settings &opts)
 {
+	std::cout << "Starting testing" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	//todo make the entire functino
 	model->eval();

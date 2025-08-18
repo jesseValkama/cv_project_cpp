@@ -3,12 +3,10 @@
 # Add source to this project's executable.
 
 add_executable (application_project "application_project.cpp" "application_project.h" 
-                                    "datasets/loader_funcs.cpp"
+                                    "datasets/loader_funcs.cpp" "datasets/mnist.cpp"
                                     "settings.cpp"
                                     "models/common.cpp" "models/lenet.cpp"
-                                    "datasets/mnist.cpp"
-                                    "functions/common.cpp" 
-                                    "functions/train_lenet.cpp")
+                                    "functions/common.cpp" "functions/train_lenet.cpp")
 
 set(CMAKE_PREFIX_PATH "D:/cpptools/libtorch;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6;D:/cpptools/opencv/build")
 

@@ -14,19 +14,19 @@ struct MnistOpts
 	torch::Device dev = torch::kCUDA;
 
 	int imgsz = 28;
-	size_t trainBS = 32;
-	size_t valBS = 32;
-	size_t testBS = 32;
+	int imgresz = 32;
+	size_t trainBS = 128;
+	size_t valBS = 128;
+	size_t testBS = 128;
 	size_t numWorkers = 4;
 	/*size_t iters = 10;
 	size_t interval = 64;*/
-
 };
 
 struct Settings
 {
 	MnistOpts mnistOpts;
-	size_t maxEpochs = 30;
+	size_t maxEpochs = 4;
 	size_t valInterval = 6;
 	float learningRate = 0.005;
 	int numOfChannels = 10;

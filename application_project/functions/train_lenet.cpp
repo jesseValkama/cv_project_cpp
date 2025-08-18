@@ -1,8 +1,11 @@
 #include "train_lenet.h"
 
+#include <stdint.h>
 #include <iostream>
-#include <memory>
 #include <limits>
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
 #include <torch/torch.h>
@@ -19,7 +22,9 @@ int lenet_loop(Settings &opts)
 {
 	std::cout << "Starting to train lenet" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
-	LeNet model(opts.numOfChannels, mnistOpts.imgsz);
+
+	// TODO: move to train fn, and load in test to allow for retesting experiments
+	LeNet model(opts.numOfChannels, mnistOpts.imgresz);
 	model->to(mnistOpts.dev);
 	
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
@@ -32,9 +37,13 @@ int lenet_loop(Settings &opts)
 		return status;
 	}
 
-	auto dataset = MnistDataset(trainInfo, mnistOpts).map(torch::data::transforms::Stack<>());
+	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
+	auto dataset = MnistDataset(trainInfo, mnistOpts)
+		.map(torch::data::transforms::Normalize<>(
+			{0.1307}, {0.3081}))
+		.map(torch::data::transforms::Stack<>());
 	auto trainSize = dataset.size().value();
-	auto dataloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
+	auto dataloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 		(
 			std::move(dataset),
 			torch::data::DataLoaderOptions().batch_size(mnistOpts.trainBS).workers(mnistOpts.numWorkers)
@@ -70,21 +79,21 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 	bool stop = false;
 	size_t dec = 0;
 
-	for (size_t epoch = 1; epoch <= opts.maxEpochs; epoch++)
+	for (size_t epoch = 1; epoch <= opts.maxEpochs; ++epoch)
 	{	
-		std::cout << "Epoch:" << epoch << std::endl;
+		std::cout << "Epoch: " << epoch << std::endl;
 		model->train();
 
 		float trainLoss = 0.0;
 		int i = 0;
-		for (auto &batch : trainloader)
+		for (Example &batch : trainloader)
 		{
-			auto imgs = batch.data.to(mnistOpts.dev);
-			auto labels = batch.target.to(mnistOpts.dev).view({-1});
+			torch::Tensor imgs = batch.data.to(mnistOpts.dev);
+			torch::Tensor labels = batch.target.to(mnistOpts.dev).view({-1});
 			optimiser.zero_grad();
 
 			torch::Tensor outputs = model->forward(imgs);
-			auto loss = lossFn(outputs, labels);
+			torch::Tensor loss = lossFn(outputs, labels);
 			if (std::isnan(loss.template item<float>()))
 			{
 				std::cout << "Training is unstable, change settings" << std::endl;
@@ -100,7 +109,7 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 		trainLoss /= i;
 
 		// TODO: visualise the train loss with opencv
-		std::cout << "Train loss:" << trainLoss << std::endl;
+		std::cout << "Train loss: " << trainLoss << std::endl;
 
 		if (epoch % opts.valInterval == 0)
 		{
@@ -130,13 +139,13 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	float valLoss = 0.0;
 	
 	torch::NoGradGuard no_grad;
-	for (auto& batch : valloader)
+	for (Example &batch : valloader)
 	{
-		auto imgs = batch.data.to(mnistOpts.dev);
-		auto labels = batch.target.to(mnistOpts.dev).view({-1});
+		torch::Tensor imgs = batch.data.to(mnistOpts.dev);
+		torch::Tensor labels = batch.target.to(mnistOpts.dev).view({-1});
 
 		torch::Tensor outputs = model->forward(imgs);
-		auto loss = lossFn(outputs, labels);
+		torch::Tensor loss = lossFn(outputs, labels);
 		if (std::isnan(loss.template item<float>()))
 		{
 			std::cout << "Validation is unstable, change parameters" << std::endl;
@@ -149,7 +158,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	valLoss /= i;
 	
 	// TODO visualise
-	std::cout << "The validation loss is:" << valLoss << std::endl;
+	std::cout << "The validation loss is: " << valLoss << std::endl;
 	
 	// < is used to avoid false improvements
 	if (valLoss < bestValLoss)
@@ -174,13 +183,14 @@ int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossF
 	int i = 0;
 	
 	torch::NoGradGuard no_grad;
-	for (auto &batch : testloader)
+	for (Example &batch : testloader)
 	{
-		auto imgs = batch.data.to(mnistOpts.dev);
-		auto labels = batch.target.to(mnistOpts.dev).view({-1});
+		torch::Tensor imgs = batch.data.to(mnistOpts.dev);
+		torch::Tensor labels = batch.target.to(mnistOpts.dev).view({-1});
 
 		torch::Tensor outputs = model->forward(imgs);
-		
+		std::unordered_map<std::string, uint32_t> cm = calc_cm(labels, outputs, 0.50);
+				
 		i++;
 	}
 

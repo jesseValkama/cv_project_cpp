@@ -9,12 +9,18 @@
 
 Example MnistDataset::get(size_t i)
 {
+	/*
+	* TODO:
+	* add normalisation (z-scaling)
+	* add shuffle
+	*/
+
 	std::pair<cv::Mat, char> p = load_mnist_img(mnistOpts.fimgname, i, info, mnistOpts.imgsz, mnistOpts.imgsz);
-	cv::resize(p.first, p.first, cv::Size(mnistOpts.imgsz, mnistOpts.imgsz));
+	cv::resize(p.first, p.first, cv::Size(mnistOpts.imgresz, mnistOpts.imgresz));
 	auto timg = torch::from_blob
 	(
 		p.first.ptr(),
-		{ 1, mnistOpts.imgsz, mnistOpts.imgsz },
+		{ 1, mnistOpts.imgresz, mnistOpts.imgresz },
 		torch::kUInt8
 	).to(torch::kFloat);
 	auto tlabel = torch::tensor(p.second, torch::kLong);

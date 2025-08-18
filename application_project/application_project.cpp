@@ -1,8 +1,5 @@
 ﻿#include "settings.h"
 
-#include "datasets/mnist.h"
-
-#include "functions/common.h"
 #include "functions/train_lenet.h"
 
 int main(void)

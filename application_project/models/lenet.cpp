@@ -43,9 +43,9 @@ LeNetImpl::LeNetImpl(int nc, int imgsz)
 	size = size * size * cb2.out;
 
 	fc1 = nn::Linear(nn::LinearOptions(size,120));
-	relu1 = nn::ReLU(nn::ReLUOptions().inplace(true));
+	relu1 = nn::ReLU();
 	fc2 = nn::Linear(nn::LinearOptions(120,84));
-	relu2 = nn::ReLU(nn::ReLUOptions().inplace(true));
+	relu2 = nn::ReLU(); // nn::ReLUOptions().inplace(true)
 	fc3 = nn::Linear(nn::LinearOptions(84,nc));
 	
 	register_module("conv1", conv1);
@@ -73,13 +73,13 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 {
 	x = conv1->forward(x);
 	x = bn1->forward(x);
-	x = relu1->forward(x);
+	x = a1->forward(x);
 
 	x = mp1->forward(x);
 
 	x = conv2->forward(x);
 	x = bn2->forward(x);
-	x = relu2->forward(x);
+	x = a2->forward(x);
 
 	x = mp2->forward(x);
 	

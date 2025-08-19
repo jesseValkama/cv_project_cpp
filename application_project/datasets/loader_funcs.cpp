@@ -134,5 +134,5 @@ std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info &
 		std::runtime_error("Could not open the img");
 	}
 
-	return std::make_pair(img, l);
+	return std::make_pair(img.clone(), l);
 }

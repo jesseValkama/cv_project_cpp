@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
 #include <torch/torch.h>
 
@@ -35,21 +36,52 @@ bool early_stopping(int mem, bool imp)
 	return false;
 }
 
-std::unordered_map<std::string, uint32_t> calc_cm(torch::Tensor labels, torch::Tensor logits, float threshold)
+std::vector<std::unordered_map<std::string, uint32_t>> calc_cm(torch::Tensor labels, torch::Tensor logits)
 {
 	/*
-	* PSEUDO CODE
-	* tp = correct && prob > threshold
-	* fp = incorrect && prob > threshold
-	* fn = incorrect || correct && prob < threshold
-	*/
-
-	torch::Tensor preds = torch::softmax(logits, 1);
-	std::unordered_map<std::string, uint32_t> cm =
-	{ {"tp", 0}, {"fp", 0}, {"fn", 0} };
+	* never done this before so i had to study it: 
+	* i was only familiar with confusion matrices for object detection
+	* src: https://www.analyticsvidhya.com/blog/2021/06/confusion-matrix-for-multi-class-classification/ 
+	* 
+	* constructing the cm
+	*
+	* repeat for each item
+	* check lbl and pred
+	*   1. go to the row that corresponds to the label
+	*	2. add 1 to the prediction 
+	*	   (if the prediction is wrong, it will automatically be both an fp and fn,
+	*		because if it is a fp for one class, it will be a false negative for another)
+	* 
+	* therefore:
+	*    if (lbl == pred)
+	*		tp++
+	*    else
+	*		fp++
+	*	    fn++
+	* 
+	*	     preds
+	* 
+	* l		s   v   t 
+	* a  s [16, 0,  0] 0 + 0 for fn
+	* b  v [0,  17, 1] 0 + 1 for fn
+	* e  t [0,  0, 11] 0 + 0 for fn
+	* l		0   0   0
+	*		+   +   +
+	*       0   0   1
+	*       fp  fp  fp
+	* 
+	*/ 
 	
-	auto size = preds.sizes();
-	for (int i = 0; i < size[0]; ++i)
+	torch::Tensor preds = torch::softmax(logits, 1);
+	std::vector<std::unordered_map<std::string, uint32_t>> cmstats;
+	auto nc = labels.sizes();
+	for (int i = 0; i < nc[0]; ++i)
+	{
+		cmstats.push_back({ {"tp", 0}, {"fp", 0}, {"fn", 0} });
+	}
+
+	auto n = preds.sizes(); // TODO: typecast to int
+	for (int i = 0; i < n[0]; ++i)
 	{
 		torch::Tensor xi = torch::argmax(preds[i]);
 		torch::Tensor prob = preds[i][xi];
@@ -58,26 +90,23 @@ std::unordered_map<std::string, uint32_t> calc_cm(torch::Tensor labels, torch::T
 		xi = xi.to(torch::kCPU);
 		label = label.to(torch::kCPU);
 		prob = prob.to(torch::kCPU);
+		int64_t p = xi.item<int64_t>();
+		int64_t l = label.item<int64_t>();
+		
+		// TODO: construct the cm
 
-		if (prob.item<float>() < threshold)
+		if (p == l)
 		{
-			cm["fn"] += 1;
-		}
-		else if (xi.item<int64_t>() == label.item<int64_t>())
-		{
-			cm["tp"] += 1;
+			cmstats[l]["tp"] += 1;
 		}
 		else
 		{
-			cm["fp"] += 1;
+			cmstats[l]["fp"] += 1;
+			cmstats[p]["fn"] += 1;
 		}
 	}
-
-	std::cout << "tp: " << cm["tp"] << std::endl;
-	std::cout << "fp: " << cm["fp"] << std::endl;
-	std::cout << "fn: " << cm["fn"] << std::endl;
-
-	return cm;
+	
+	return cmstats;
 }
 
 std::unordered_map<std::string, float> calc_metrics(std::unordered_map<std::string, uint32_t> cm)

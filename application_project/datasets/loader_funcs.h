@@ -11,7 +11,7 @@
 #include "../settings.h"
 
 typedef std::vector<std::pair<int, char>> Info;
-typedef torch::data::Example<> Example;
+typedef torch::data::Example<> Batch;
 
 /*
 * TODO:

@@ -15,7 +15,7 @@ int lenet_loop(Settings &opts);
 */
 
 template<typename Dataloader>
-int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader, 
+int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader, const size_t TRAIN_SIZE, 
 	torch::optim::Optimizer &optimiser, nn::CrossEntropyLoss &lossFn, Settings &opts);
 /*
 	* The function to train LeNet
@@ -26,7 +26,7 @@ int lenet_train(LeNet &model, Dataloader &trainloader, Dataloader &valloader,
 */
 
 template<typename Dataloader>
-int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
+int lenet_val(LeNet &model, Dataloader &valloader, const size_t TRAIN_SIZE, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 

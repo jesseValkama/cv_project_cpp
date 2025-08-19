@@ -23,7 +23,7 @@ class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 		MnistDataset(const Info& info, const MnistOpts& mnistOpts) 
 			: info(info), mnistOpts(mnistOpts) {}
 		
-		Example get(size_t i);
+		Batch get(size_t i);
 		torch::optional<size_t> size() const;
 };
 

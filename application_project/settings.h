@@ -8,10 +8,12 @@
 
 struct MnistOpts
 {
-	std::string fimgname = "D:/datasets/mnist/train-images.idx3-ubyte";
-	std::string flabelname = "D:/datasets/mnist/train-labels.idx1-ubyte";
+	// i downloaded the dataset from kaggle
+	std::string fTrainImgs = "D:/datasets/mnist/train-images.idx3-ubyte";
+	std::string fTrainLabels = "D:/datasets/mnist/train-labels.idx1-ubyte";
+	std::string fTestImgs = "D:/datasets/mnist/t10k-images.idx3-ubyte";
+	std::string fTestLabels = "D:/datasets/mnist/t10k-labels.idx1-ubyte";
 	std::string savepath = "D:/self-studies/application_project/application_project/weights/model.pth";
-	torch::Device dev = torch::kCUDA;
 
 	int imgsz = 28;
 	int imgresz = 32;
@@ -19,18 +21,17 @@ struct MnistOpts
 	size_t valBS = 128;
 	size_t testBS = 128;
 	size_t numWorkers = 4;
-	/*size_t iters = 10;
-	size_t interval = 64;*/
+	int numOfChannels = 10;
 };
 
 struct Settings
 {
 	MnistOpts mnistOpts;
-	size_t maxEpochs = 4;
-	size_t valInterval = 6;
+	torch::Device dev = torch::kCUDA;
+	size_t maxEpochs = 8;
+	size_t valInterval = 2;
 	float learningRate = 0.005;
-	int numOfChannels = 10;
-	size_t IntervalsBeforeEarlyStopping = 5;
+	size_t IntervalsBeforeEarlyStopping = 1;
 	bool automatedMixedPrecision = false;
 };
 

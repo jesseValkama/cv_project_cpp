@@ -71,8 +71,11 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows,
 
 int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 {
-	std::ifstream fimg(opts.fimgname, std::ios::in | std::ios::binary);
-	std::ifstream flabel(opts.flabelname, std::ios::in | std::ios::binary);
+	std::string fImgs = (type == "train") ? opts.fTrainImgs : opts.fTestImgs;
+	std::string fLabels = (type == "train") ? opts.fTrainLabels : opts.fTestLabels;
+
+	std::ifstream fimg(fImgs, std::ios::in | std::ios::binary);
+	std::ifstream flabel(fLabels, std::ios::in | std::ios::binary);
 
 	if (!(flabel.is_open() && fimg.is_open()))
 	{

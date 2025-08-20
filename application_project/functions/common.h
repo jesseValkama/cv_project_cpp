@@ -12,8 +12,35 @@ namespace nn = torch::nn;
 
 bool early_stopping(int mem, bool imp);
 
-std::vector<std::unordered_map<std::string, uint32_t>> calc_cm(torch::Tensor labels, torch::Tensor logits);
+// i think typedefs are justified, since the types are long and using auto would be even worse
+typedef std::vector<std::unordered_map<std::string, uint32_t>> AllCm;
+typedef std::unordered_map<std::string, uint32_t> ClsCm;
+//typedef std::vector<std::unordered_map<std::string, float>> AllMetrics;
+typedef std::unordered_map<std::string, float> AvgMetrics;
 
-std::unordered_map<std::string, float> calc_metrics(std::unordered_map<std::string, uint32_t> cm);
+struct MetricsContainer
+{
+	AllCm cm;
+	torch::Tensor table;
+	AvgMetrics metrics;
+
+	MetricsContainer(AllCm cm, torch::Tensor table) 
+		: cm(cm), table(table) {};
+
+	void add(int64_t i, std::string term, std::pair<int64_t, int64_t> &p);
+	
+	void calc_metrics(uint32_t nc);
+
+	AllCm get_cm();
+
+	void print_cm();
+
+	void print_metrics();
+
+};
+
+MetricsContainer create_mc(uint32_t nc);
+
+void calc_cm(torch::Tensor labels, torch::Tensor logits, MetricsContainer &mc);
 
 #endif

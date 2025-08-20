@@ -1,12 +1,12 @@
 #include "common.h"
 
 #include <stdint.h>
+#include <iomanip>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
 
 #include <torch/torch.h>
-
 
 bool early_stopping(int mem, bool imp)
 {
@@ -36,7 +36,59 @@ bool early_stopping(int mem, bool imp)
 	return false;
 }
 
-std::vector<std::unordered_map<std::string, uint32_t>> calc_cm(torch::Tensor labels, torch::Tensor logits)
+void MetricsContainer::add(int64_t i, std::string term, std::pair<int64_t, int64_t> &p)
+{
+	cm[i][term] += 1;
+	table[p.first][p.second] += 1;
+}
+
+AllCm MetricsContainer::get_cm()
+{
+	return cm;
+}
+
+void MetricsContainer::print_cm()
+{
+	std::cout << "The confusion matrix:\n" << table << std::endl;
+}
+
+MetricsContainer create_mc(uint32_t nc)
+{
+	AllCm cm;
+	for (int i = 0; i < nc; ++i)
+	{
+		cm.push_back({ {"tp", 0}, {"fp", 0}, {"fn", 0} });
+	}
+	torch::Tensor table = torch::zeros({nc, nc});
+	return MetricsContainer(cm, table);
+}
+
+void MetricsContainer::calc_metrics(uint32_t nc)
+{
+	float recall = 0.0, precision = 0.0, accuracy = 0.0;
+	for (int i = 0; i < nc; ++i)
+	{
+		recall += (float) cm[i]["tp"] / (float) (cm[i]["tp"] + (float) cm[i]["fn"]);
+		precision += (float) cm[i]["tp"] / (float) (cm[i]["tp"] + (float) cm[i]["fp"]);
+		accuracy += (float) cm[i]["tp"] / (float) (cm[i]["tp"] + (float) cm[i]["fp"] + (float) cm[i]["fn"]);
+	}
+	recall /= (float) nc;
+	precision /= (float) nc;
+	accuracy /= (float) nc;
+
+	metrics = { {"recall", recall},{"precision", precision},{"accuracy", accuracy} };
+}
+
+void MetricsContainer::print_metrics()
+{
+	std::cout << std::fixed;
+	std::cout << std::setprecision(2);
+	std::cout << "recall: " << metrics["recall"] << std::endl;
+	std::cout << "precision: " << metrics["precision"] << std::endl;
+	std::cout << "accuracy: " << metrics["accuracy"] << std::endl;
+}
+
+void calc_cm(torch::Tensor labels, torch::Tensor logits, MetricsContainer &mc)
 {
 	/*
 	* never done this before so i had to study it: 
@@ -73,13 +125,7 @@ std::vector<std::unordered_map<std::string, uint32_t>> calc_cm(torch::Tensor lab
 	*/ 
 	
 	torch::Tensor preds = torch::softmax(logits, 1);
-	std::vector<std::unordered_map<std::string, uint32_t>> cmstats;
-	auto nc = labels.sizes();
-	for (int i = 0; i < nc[0]; ++i)
-	{
-		cmstats.push_back({ {"tp", 0}, {"fp", 0}, {"fn", 0} });
-	}
-
+	
 	auto n = preds.sizes(); // TODO: typecast to int
 	for (int i = 0; i < n[0]; ++i)
 	{
@@ -94,24 +140,16 @@ std::vector<std::unordered_map<std::string, uint32_t>> calc_cm(torch::Tensor lab
 		int64_t l = label.item<int64_t>();
 		
 		// TODO: construct the cm
-
+		
+		std::pair<int64_t, int64_t> pair = std::make_pair(l, p);
 		if (p == l)
 		{
-			cmstats[l]["tp"] += 1;
+			mc.add(l, "tp", pair);
 		}
 		else
 		{
-			cmstats[l]["fp"] += 1;
-			cmstats[p]["fn"] += 1;
+			mc.add(l, "fp", pair);
+			mc.add(p, "fn", pair);
 		}
 	}
-	
-	return cmstats;
-}
-
-std::unordered_map<std::string, float> calc_metrics(std::unordered_map<std::string, uint32_t> cm)
-{
-	std::unordered_map<std::string, float> metrics =
-	{ {"recall",0.0},{"precision",0.0},{"accuracy",0.0} };
-	return metrics;
 }

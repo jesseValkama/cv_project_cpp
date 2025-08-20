@@ -24,13 +24,9 @@ int lenet_loop(Settings &opts)
 {
 	std::cout << "Starting to train lenet" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
-
-	// TODO: move to train fn, and load in test to allow for retesting experiments
-	LeNet model(opts.numOfChannels, mnistOpts.imgresz);
-	model->to(mnistOpts.dev);
 	
+	// TODO: split train into train and val
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
-	// incase i am not done with this, i am overfitting to debug
 	Info trainInfo, testInfo;
 	int status = 0;
 	status = load_mnist_info(opts.mnistOpts, trainInfo, "train");
@@ -38,43 +34,58 @@ int lenet_loop(Settings &opts)
 	{
 		return status;
 	}
+	status = load_mnist_info(opts.mnistOpts, testInfo, "test");
+	if (status != 0)
+	{
+		return status;
+	}
 
 	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
-	auto dataset = MnistDataset(trainInfo, mnistOpts)
+	auto trainset = MnistDataset(trainInfo, mnistOpts, "train")
 		.map(torch::data::transforms::Normalize<>(
 			{0.1307}, {0.3081}))
 		.map(torch::data::transforms::Stack<>());
-	const size_t TRAIN_SIZE = dataset.size().value();
-	auto dataloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	auto testset = MnistDataset(testInfo, mnistOpts, "test")
+		.map(torch::data::transforms::Normalize<>(
+			{ 0.1307 }, { 0.3081 }))
+		.map(torch::data::transforms::Stack<>());
+	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 		(
-			std::move(dataset),
+			std::move(trainset),
 			torch::data::DataLoaderOptions().batch_size(mnistOpts.trainBS).workers(mnistOpts.numWorkers)
 		);
+	auto testloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+		(
+			std::move(testset),
+			torch::data::DataLoaderOptions().batch_size(mnistOpts.testBS).workers(mnistOpts.numWorkers)
+		);
 	
-	torch::optim::Adam optimiser(model->parameters(), torch::optim::AdamOptions(opts.learningRate));
-	torch::nn::CrossEntropyLoss lossFn;
-	
-	int ret = lenet_train(model, *dataloader, *dataloader, TRAIN_SIZE, optimiser, lossFn, opts);
-	if (ret == 1)
+	status = lenet_train(*trainloader, *trainloader, opts);
+	if (status == 1)
 	{
-		return 1;
+		return status;
 	}
 
-	ret = lenet_test(model, *dataloader, lossFn, opts);
-	if (ret == 1)
+	status = lenet_test(*testloader, opts);
+	if (status == 1)
 	{
 		std::cout << "The testing failed, fatal" << std::endl;
-		return 1;
+		return status;
 	}
 
 	return 0;
 }
 
 template<typename Dataloader>
-int lenet_train(LeNet& model, Dataloader& trainloader, Dataloader& valloader, const size_t TRAIN_SIZE,
-	torch::optim::Optimizer &optimiser, nn::CrossEntropyLoss &lossFn, Settings &opts)
+int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
+	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
+	model->to(opts.dev);
+
+	torch::optim::Adam optimiser(model->parameters(), torch::optim::AdamOptions(opts.learningRate));
+	torch::nn::CrossEntropyLoss lossFn;
+
 	int ret = 0;
 	float bestValLoss = std::numeric_limits<float>::infinity();
 	bool valImprov = false;
@@ -90,8 +101,8 @@ int lenet_train(LeNet& model, Dataloader& trainloader, Dataloader& valloader, co
 		int i = 0;
 		for (Batch &batch : trainloader)
 		{
-			torch::Tensor imgs = batch.data.to(mnistOpts.dev);
-			torch::Tensor labels = batch.target.to(mnistOpts.dev).view({ -1 });
+			torch::Tensor imgs = batch.data.to(opts.dev);
+			torch::Tensor labels = batch.target.to(opts.dev).view({ -1 });
 			
 			// TODO: make a dbg func for Tensortomat
 			/*torch::Tensor dbg = imgs[0].detach().cpu();
@@ -126,7 +137,7 @@ int lenet_train(LeNet& model, Dataloader& trainloader, Dataloader& valloader, co
 
 		if (epoch % opts.valInterval == 0)
 		{
-			ret = lenet_val(model, valloader, TRAIN_SIZE, bestValLoss, lossFn, valImprov, opts);
+			ret = lenet_val(model, valloader, bestValLoss, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
 				std::cout << "The training failed, fatal" << std::endl;
@@ -144,7 +155,7 @@ int lenet_train(LeNet& model, Dataloader& trainloader, Dataloader& valloader, co
 }
 
 template<typename Dataloader>
-int lenet_val(LeNet &model, Dataloader &valloader, const size_t TRAIN_SIZE, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
 	model->eval();
@@ -154,8 +165,8 @@ int lenet_val(LeNet &model, Dataloader &valloader, const size_t TRAIN_SIZE, floa
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : valloader)
 	{
-		torch::Tensor imgs = batch.data.to(mnistOpts.dev);
-		torch::Tensor labels = batch.target.to(mnistOpts.dev).view({-1});
+		torch::Tensor imgs = batch.data.to(opts.dev);
+		torch::Tensor labels = batch.target.to(opts.dev).view({-1});
 
 		torch::Tensor outputs = model->forward(imgs);
 		torch::Tensor loss = lossFn(outputs, labels);
@@ -167,7 +178,6 @@ int lenet_val(LeNet &model, Dataloader &valloader, const size_t TRAIN_SIZE, floa
 		i++;
 		valLoss += loss.item<float>();
 	}
-	
 	valLoss /= i;
 	
 	// TODO visualise
@@ -187,37 +197,26 @@ int lenet_val(LeNet &model, Dataloader &valloader, const size_t TRAIN_SIZE, floa
 }
 
 template<typename Dataloader>
-int lenet_test(LeNet &model, Dataloader &testloader, nn::CrossEntropyLoss &lossFn, Settings &opts)
+int lenet_test(Dataloader &testloader, Settings &opts)
 {
 	std::cout << "Starting testing" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
+	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
+	torch::load(model, mnistOpts.savepath);
 	model->eval();
-	uint32_t nc = 0;
-
-	std::unordered_map<std::string, uint32_t> cmstats =
-	{ {"tp", 0}, {"fp", 0}, {"fn", 0} };
+	MetricsContainer mc = create_mc(mnistOpts.numOfChannels);
 
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : testloader)
 	{
-		torch::Tensor imgs = batch.data.to(mnistOpts.dev);
-		torch::Tensor labels = batch.target.to(mnistOpts.dev).view({-1});
-
+		torch::Tensor imgs = batch.data.to(opts.dev);
+		torch::Tensor labels = batch.target.to(opts.dev).view({ -1 });
 		torch::Tensor outputs = model->forward(imgs);
-		std::vector<std::unordered_map<std::string, uint32_t>> tmp = calc_cm(labels, outputs);
-		nc = tmp.size();
-
-		for (int i = 0; i < nc; ++i)
-		{
-			cmstats["tp"] += tmp[i]["tp"];
-			cmstats["fp"] += tmp[i]["fp"];
-			cmstats["fn"] += tmp[i]["fn"];
-		}
+		calc_cm(labels, outputs, mc);
 	}
-
-	std::cout << "tp: " << cmstats["tp"] << std::endl;
-	std::cout << "fp: " << cmstats["fp"] << std::endl;
-	std::cout << "fn: " << cmstats["fn"] << std::endl;
-	
+	mc.print_cm();
+	mc.calc_metrics(mnistOpts.numOfChannels);
+	mc.print_metrics();
+		
 	return 0;
 }

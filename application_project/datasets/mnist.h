@@ -18,10 +18,11 @@ class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 	*/
 	const Info info;
 	const MnistOpts mnistOpts;
+	const std::string type;
 
 	public:
-		MnistDataset(const Info& info, const MnistOpts& mnistOpts) 
-			: info(info), mnistOpts(mnistOpts) {}
+		MnistDataset(const Info& info, const MnistOpts& mnistOpts, const std::string type) 
+			: info(info), mnistOpts(mnistOpts), type(type) {}
 		
 		Batch get(size_t i);
 		torch::optional<size_t> size() const;

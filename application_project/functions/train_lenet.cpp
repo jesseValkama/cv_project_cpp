@@ -22,14 +22,14 @@ namespace nn = torch::nn;
 
 int lenet_loop(Settings &opts)
 {
-	std::cout << "Starting to train lenet" << "\n";
+	std::cout << "\033[35m" << "Starting to train lenet" << "\033[0m" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	
 	// TODO: split train into train and val
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
-	Info trainInfo, testInfo;
+	Info trainValInfo, testInfo;
 	int status = 0;
-	status = load_mnist_info(opts.mnistOpts, trainInfo, "train");
+	status = load_mnist_info(opts.mnistOpts, trainValInfo, "train");
 	if (status != 0)
 	{
 		return status;
@@ -39,20 +39,29 @@ int lenet_loop(Settings &opts)
 	{
 		return status;
 	}
-
-	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
+	auto [trainInfo, valInfo] = split_train_val_info(trainValInfo, 0.85);
+	
 	auto trainset = MnistDataset(trainInfo, mnistOpts, "train")
 		.map(torch::data::transforms::Normalize<>(
-			{0.1307}, {0.3081}))
+			{mnistOpts.mean}, {mnistOpts.stdev}))
+		.map(torch::data::transforms::Stack<>());
+	auto valset = MnistDataset(valInfo, mnistOpts, "val")
+		.map(torch::data::transforms::Normalize<>(
+			{mnistOpts.mean}, {mnistOpts.stdev}))
 		.map(torch::data::transforms::Stack<>());
 	auto testset = MnistDataset(testInfo, mnistOpts, "test")
 		.map(torch::data::transforms::Normalize<>(
-			{ 0.1307 }, { 0.3081 }))
+			{mnistOpts.mean}, {mnistOpts.stdev}))
 		.map(torch::data::transforms::Stack<>());
 	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 		(
 			std::move(trainset),
 			torch::data::DataLoaderOptions().batch_size(mnistOpts.trainBS).workers(mnistOpts.numWorkers)
+		);
+	auto valloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+		(
+			std::move(valset),
+			torch::data::DataLoaderOptions().batch_size(mnistOpts.valBS).workers(mnistOpts.numWorkers)
 		);
 	auto testloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 		(
@@ -60,19 +69,17 @@ int lenet_loop(Settings &opts)
 			torch::data::DataLoaderOptions().batch_size(mnistOpts.testBS).workers(mnistOpts.numWorkers)
 		);
 	
-	status = lenet_train(*trainloader, *trainloader, opts);
+	status = lenet_train(*trainloader, *valloader, opts);
 	if (status == 1)
 	{
 		return status;
 	}
-
 	status = lenet_test(*testloader, opts);
 	if (status == 1)
 	{
-		std::cout << "The testing failed, fatal" << std::endl;
+		std::cout << "\033[31m" << "The testing failed, fatal" << "\033[0m" << std::endl;
 		return status;
 	}
-
 	return 0;
 }
 
@@ -94,7 +101,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 
 	for (size_t epoch = 1; epoch <= opts.maxEpochs; ++epoch)
 	{	
-		std::cout << "Epoch: " << epoch << std::endl;
+		std::cout << "\033[32m" << "Epoch: " << epoch << "\033[0m" << std::endl;
 		model->train();
 
 		float trainLoss = 0.0;
@@ -120,7 +127,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 			torch::Tensor loss = lossFn(outputs, labels);
 			if (std::isnan(loss.template item<float>()))
 			{
-				std::cout << "Training is unstable, change settings" << std::endl;
+				std::cout << "\033[31m" << "Training is unstable, change settings" << "\033[0m" << std::endl;
 				return 1;
 			}
 			loss.backward();
@@ -133,14 +140,14 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 		trainLoss /= i;
 
 		// TODO: visualise the train loss with opencv
-		std::cout << "Train loss: " << trainLoss << std::endl;
+		std::cout << "\033[35m" << "Train loss: " << trainLoss << "\033[0m" << std::endl;
 
 		if (epoch % opts.valInterval == 0)
 		{
 			ret = lenet_val(model, valloader, bestValLoss, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
-				std::cout << "The training failed, fatal" << std::endl;
+				std::cout << "\033[31m" << "The training failed, fatal" << "\033[0m" << std::endl;
 				return 1;
 			}
 			stop = early_stopping(opts.IntervalsBeforeEarlyStopping, valImprov);
@@ -172,7 +179,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 		torch::Tensor loss = lossFn(outputs, labels);
 		if (std::isnan(loss.template item<float>()))
 		{
-			std::cout << "Validation is unstable, change parameters" << std::endl;
+			std::cout << "\033[31m" << "Validation is unstable, change parameters" << "\033[0m" << std::endl;
 			return 1;
 		}
 		i++;
@@ -181,16 +188,17 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	valLoss /= i;
 	
 	// TODO visualise
-	std::cout << "The validation loss is: " << valLoss << std::endl;
+	std::cout << "\033[35m" << "The validation loss is: " << valLoss << "\033[0m" << std::endl;
 	
 	// < is used to avoid false improvements
+	imp = false;
 	if (valLoss < bestValLoss)
 	{
 		// TODO: error handling if the path doesn't exist
 		torch::save(model, mnistOpts.savepath);
 		bestValLoss = valLoss;
 		imp = true;
-		std::cout << "The model improved" << std::endl;
+		std::cout << "\033[33m" << "The model improved" << "\033[0m" << std::endl;
 	}
 
 	return 0;
@@ -199,7 +207,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 template<typename Dataloader>
 int lenet_test(Dataloader &testloader, Settings &opts)
 {
-	std::cout << "Starting testing" << "\n";
+	std::cout << "\033[35m" << "Starting testing" << "\033[0m" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
 	torch::load(model, mnistOpts.savepath);

@@ -1,12 +1,17 @@
 #include "common.h"
 
+#include <random>
 #include <stdint.h>
+#include <string>
 #include <iomanip>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
 
 #include <torch/torch.h>
+
+#include "../datasets/mnist.h"
+#include "../datasets/loader_funcs.h"
 
 bool early_stopping(int mem, bool imp)
 {
@@ -24,16 +29,39 @@ bool early_stopping(int mem, bool imp)
 	static int dec = 0;
 	if (!imp)
 	{
+		std::cout << "The model did not improve" << std::endl;
 		dec++;
 	}
-
-	if (dec == mem)
+	if (dec >= mem)
 	{
 		std::cout << "Early stopping stopped the training" << std::endl;
 		return true;
 	}
-
 	return false;
+}
+
+std::pair<Info, Info> split_train_val_info(Info &trainValInfo, double trainProb)
+{
+	Info trainInfo, valInfo;
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dist(1, 100);
+	int n = trainValInfo.size(), r = 0;
+
+	for (int i = 0; i < n; ++i)
+	{
+		r = dist(gen);
+		if ((float) r / 100.0 >= trainProb)
+		{
+			valInfo.push_back(trainValInfo[i]);
+		}
+		else
+		{
+			trainInfo.push_back(trainValInfo[i]);
+		}
+	}
+	trainValInfo.clear();
+	return make_pair(trainInfo, valInfo);
 }
 
 void MetricsContainer::add(int64_t i, std::string term, std::pair<int64_t, int64_t> &p)

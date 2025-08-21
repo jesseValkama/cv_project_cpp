@@ -22,16 +22,20 @@ struct MnistOpts
 	size_t testBS = 128;
 	size_t numWorkers = 4;
 	int numOfChannels = 10;
+	
+	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
+	float mean = 0.1307;
+	float stdev = 0.3081;
 };
 
 struct Settings
 {
 	MnistOpts mnistOpts;
 	torch::Device dev = torch::kCUDA;
-	size_t maxEpochs = 8;
+	size_t maxEpochs = 16;
 	size_t valInterval = 2;
 	float learningRate = 0.005;
-	size_t IntervalsBeforeEarlyStopping = 1;
+	size_t IntervalsBeforeEarlyStopping = 2;
 	bool automatedMixedPrecision = false;
 };
 

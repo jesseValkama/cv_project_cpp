@@ -1,5 +1,7 @@
 #include "mnist.h"
 
+#include <cassert>
+
 #include <opencv2/opencv.hpp>
 #include <torch/torch.h>
 
@@ -9,8 +11,10 @@
 
 Batch MnistDataset::get(size_t i)
 {
-	std::string fImgs = (type == "train") ? mnistOpts.fTrainImgs : mnistOpts.fTestImgs;
-
+	assert(type == "train" || type == "val" || type == "test");
+	
+	// train and val in the same file
+	std::string fImgs = (type == "train" || type == "val") ? mnistOpts.fTrainImgs : mnistOpts.fTestImgs;
 	std::pair<cv::Mat, char> p = load_mnist_img(fImgs, i, info, mnistOpts.imgsz, mnistOpts.imgsz);
 	cv::resize(p.first, p.first, cv::Size(mnistOpts.imgresz, mnistOpts.imgresz));
 	torch::Tensor timg = torch::from_blob

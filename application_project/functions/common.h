@@ -8,14 +8,17 @@
 
 #include <torch/torch.h>
 
+#include "../datasets/loader_funcs.h"
+#include "../datasets/mnist.h"
+
 namespace nn = torch::nn;
 
 bool early_stopping(int mem, bool imp);
+std::pair<Info, Info> split_train_val_info(Info& trainValInfo, double trainProb);
 
 // i think typedefs are justified, since the types are long and using auto would be even worse
 typedef std::vector<std::unordered_map<std::string, uint32_t>> AllCm;
 typedef std::unordered_map<std::string, uint32_t> ClsCm;
-//typedef std::vector<std::unordered_map<std::string, float>> AllMetrics;
 typedef std::unordered_map<std::string, float> AvgMetrics;
 
 struct MetricsContainer

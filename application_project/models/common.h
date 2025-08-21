@@ -19,6 +19,12 @@ struct ConvBlockParams
 	int64_t bn;
 };
 
+struct MaxPoolParams
+{
+	int64_t ks;
+	int64_t s;
+};
+
 struct ConvBlockImpl : torch::nn::Module
 {
 	ConvBlockImpl(const ConvBlockParams& p);
@@ -32,6 +38,6 @@ struct ConvBlockImpl : torch::nn::Module
 
 TORCH_MODULE(ConvBlock);
 
-int dynamicFC(int imgsz, ConvBlockParams &cb1, ConvBlockParams &cb2);
+int64_t dynamicFC(int imgsz, ConvBlockParams &cb1, MaxPoolParams &mp1, ConvBlockParams &cb2, MaxPoolParams &mp2);
 
 #endif

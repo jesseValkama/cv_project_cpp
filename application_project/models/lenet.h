@@ -19,18 +19,15 @@ struct LeNetImpl : torch::nn::Module
 	* This model does not process image sizes other than 32x32, as the original LeNet did
 	*/
 
-	nn::Conv2d conv1{ nullptr };
-	nn::BatchNorm2d bn1{ nullptr };
-	nn::ReLU a1{ nullptr };
+	ConvBlockParams cb1 = { 1, 6, 5, 1, 0, 6 };
+	ConvBlockParams cb2 = { 6, 16, 5, 1, 0, 16 };
+	MaxPoolParams mp1 = { 2, 2 };
+	MaxPoolParams mp2 = { 2, 2 };
 
-	nn::Conv2d conv2{ nullptr };
-	nn::BatchNorm2d bn2{ nullptr };
-	nn::ReLU a2{ nullptr };
-
-	//ConvBlock conv1{ nullptr };
-	//ConvBlock conv2{ nullptr };
-	nn::MaxPool2d mp1{ nullptr };
-	nn::MaxPool2d mp2{ nullptr };
+	ConvBlock conv1{ nullptr };
+	ConvBlock conv2{ nullptr };
+	nn::MaxPool2d mPool1{ nullptr };
+	nn::MaxPool2d mPool2{ nullptr };
 	nn::Linear fc1{ nullptr };
 	nn::Linear fc2{ nullptr };
 	nn::Linear fc3{ nullptr };
@@ -39,8 +36,7 @@ struct LeNetImpl : torch::nn::Module
 
 	LeNetImpl(int nc, int imgsz);
 	torch::Tensor forward(torch::Tensor x);
-	
-	};
+};
 
 TORCH_MODULE(LeNet);
 

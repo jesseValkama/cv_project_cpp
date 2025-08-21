@@ -71,6 +71,7 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows,
 
 int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 {
+	assert(type == "train" || type == "test");
 	std::string fImgs = (type == "train") ? opts.fTrainImgs : opts.fTestImgs;
 	std::string fLabels = (type == "train") ? opts.fTrainLabels : opts.fTestLabels;
 

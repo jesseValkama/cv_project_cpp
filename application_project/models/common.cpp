@@ -14,7 +14,6 @@ ConvBlockImpl::ConvBlockImpl(const ConvBlockParams &p)
 		p.s >= 0 &&
 		p.p >= 0
 	);
-
 	conv = nn::Conv2d(nn::Conv2dOptions(p.in, p.out, p.ks).stride(p.s).bias(false));
 	bn = nn::BatchNorm2d(nn::BatchNorm2dOptions(p.bn));
 	relu = nn::ReLU();
@@ -31,15 +30,14 @@ torch::Tensor ConvBlockImpl::forward(torch::Tensor x)
 	return relu->forward(x);
 }
 
-int dynamicFC(int imgsz, ConvBlockParams &cb1, ConvBlockParams &cb2)
+int64_t dynamicFC(int imgsz, ConvBlockParams &cb1, MaxPoolParams &mp1, ConvBlockParams &cb2, MaxPoolParams &mp2)
 {
 	// computed only once, since the images are expected to be squares
 	// make changes if the layers change!!!
-	int size = 0;
+	int64_t size = 0;
 	size = (imgsz - cb1.ks + 2 * cb1.p) / (cb1.s) + 1;
-	size = (size - 2) / (2) + 1;
+	size = (size - mp1.ks) / (mp1.s) + 1;
 	size = (size - cb2.ks + 2 * cb2.p) / (cb2.s) + 1;
-	size = (size - 2) / (2) + 1;
-	size = size * size;
-	return 0;
+	size = (size - mp2.ks) / (mp2.s) + 1;
+	return size * size * cb2.out;
 }

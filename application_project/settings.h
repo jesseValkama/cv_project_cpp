@@ -13,7 +13,9 @@ struct MnistOpts
 	std::string fTrainLabels = "D:/datasets/mnist/train-labels.idx1-ubyte";
 	std::string fTestImgs = "D:/datasets/mnist/t10k-images.idx3-ubyte";
 	std::string fTestLabels = "D:/datasets/mnist/t10k-labels.idx1-ubyte";
-	std::string savepath = "D:/self-studies/application_project/application_project/weights/model.pth";
+
+	std::string inferenceDataPath = "D:/datasets/inference_imgs";
+	std::string savepath = "D:/self-studies/application_project/application_project/weights/model.pth"; // todo: fix the name
 
 	int imgsz = 28;
 	int imgresz = 32;

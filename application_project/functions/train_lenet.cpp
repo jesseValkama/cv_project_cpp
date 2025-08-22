@@ -211,6 +211,7 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 	MnistOpts mnistOpts = opts.mnistOpts;
 	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
 	torch::load(model, mnistOpts.savepath);
+	model->to(opts.dev);
 	model->eval();
 	MetricsContainer mc = create_mc(mnistOpts.numOfChannels);
 

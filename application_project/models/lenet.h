@@ -10,6 +10,7 @@
 #include "../settings.h"
 
 namespace nn = torch::nn;
+namespace ti = torch::indexing;
 
 struct LeNetImpl : torch::nn::Module
 {
@@ -34,8 +35,12 @@ struct LeNetImpl : torch::nn::Module
 	nn::ReLU relu1{ nullptr };
 	nn::ReLU relu2{ nullptr };
 
-	LeNetImpl(int nc, int imgsz);
+	bool cache = false;
+	torch::Tensor fm;
+
+	LeNetImpl(int nc, int imgsz, bool fmvis = false);
 	torch::Tensor forward(torch::Tensor x);
+	torch::Tensor get_fm(int fi = -1);
 };
 
 TORCH_MODULE(LeNet);

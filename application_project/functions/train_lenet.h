@@ -11,7 +11,7 @@
 #include "../models/lenet.h"
 #include "../settings.h"
 
-int lenet_loop(Settings &opts);
+int lenet_loop(Settings &opts, bool train, bool test);
 /*
 	* This is the main training loop
 	* return statements indicate conditions

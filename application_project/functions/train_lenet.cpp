@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -20,7 +21,7 @@
 
 namespace nn = torch::nn;
 
-int lenet_loop(Settings &opts)
+int lenet_loop(Settings &opts, bool train, bool test)
 {
 	std::cout << "\033[35m" << "Starting to train lenet" << "\033[0m" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
@@ -69,17 +70,25 @@ int lenet_loop(Settings &opts)
 			torch::data::DataLoaderOptions().batch_size(mnistOpts.testBS).workers(mnistOpts.numWorkers)
 		);
 	
-	status = lenet_train(*trainloader, *valloader, opts);
-	if (status == 1)
+	if (train) 
 	{
-		return status;
+		status = lenet_train(*trainloader, *valloader, opts);
+		if (status == 1)
+		{
+			return status;
+		}
 	}
-	status = lenet_test(*testloader, opts);
-	if (status == 1)
+	
+	if (test)
 	{
-		std::cout << "\033[31m" << "The testing failed, fatal" << "\033[0m" << std::endl;
-		return status;
+		status = lenet_test(*testloader, opts);
+		if (status == 1)
+		{
+			std::cout << "\033[31m" << "The testing failed, fatal" << "\033[0m" << std::endl;
+			return status;
+		}
 	}
+	
 	return 0;
 }
 
@@ -111,16 +120,6 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 			torch::Tensor imgs = batch.data.to(opts.dev);
 			torch::Tensor labels = batch.target.to(opts.dev).view({ -1 });
 			
-			// TODO: make a dbg func for Tensortomat
-			/*torch::Tensor dbg = imgs[0].detach().cpu();
-			std::cout << dbg.sizes() << std::endl;
-			dbg = dbg.squeeze();
-			dbg = dbg.mul(0.3081).add(0.1307);
-			dbg = dbg.mul(255).clamp(0, 255).to(torch::kUInt8);
-			int h = dbg.size(0), w = dbg.size(1);
-			cv::Mat cvdbg(h, w, CV_8UC1, dbg.data_ptr());
-			std::cout << cvdbg << std::endl;*/
-
 			optimiser.zero_grad();
 
 			torch::Tensor outputs = model->forward(imgs);
@@ -195,7 +194,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	if (valLoss < bestValLoss)
 	{
 		// TODO: error handling if the path doesn't exist
-		torch::save(model, mnistOpts.savepath);
+		torch::save(model, mnistOpts.savepath + "/working.pth");
 		bestValLoss = valLoss;
 		imp = true;
 		std::cout << "\033[33m" << "The model improved" << "\033[0m" << std::endl;
@@ -210,7 +209,7 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 	std::cout << "\033[35m" << "Starting testing" << "\033[0m" << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
-	torch::load(model, mnistOpts.savepath);
+	torch::load(model, mnistOpts.savepath + "/working.pth");
 	model->to(opts.dev);
 	model->eval();
 	MetricsContainer mc = create_mc(mnistOpts.numOfChannels);
@@ -226,6 +225,21 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 	mc.print_cm();
 	mc.calc_metrics(mnistOpts.numOfChannels);
 	mc.print_metrics();
+
+	std::string ans;
+	std::cout << "Would you like to save the model?\nType name.pth to save the model, skip by writing no" << std::endl;
+	std::getline(std::cin, ans);
+
+	std::regex rx(R"(^\w+\.pth$)");
+	if (std::regex_match(ans, rx))
+	{
+		std::cout << "Saving the model" << std::endl;
+		torch::save(model, mnistOpts.savepath + "/" + ans);
+	}
+	else
+	{
+		std::cout << "Not saving the model" << std::endl;
+	}
 		
 	return 0;
 }

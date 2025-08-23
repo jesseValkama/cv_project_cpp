@@ -12,29 +12,26 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	*
-	* add inf
-	* add fm vis
-	* per class metrics?
 	* check vectors (optimisation)
+	* check strings (unsafe?)
 	* check file reading (unsafe)
 	* check type casts in funcs/common and inf (f auto)
 	* add docstrings
 	* add readme
+	* todo errors
 	*/
 	std::unordered_map<std::string, bool> args = handle_args(argc, argv);
-
 	Settings opts;
 	int ret = 0;
+
 	if (args["train"] || args["test"])
 	{
-		ret = lenet_loop(opts);
+		ret = lenet_loop(opts, args["train"], args["test"]);
 		if (ret != 0) { return ret; }
 	}
-	
 	if (args["inference"])
 	{
-		ret = run_inference(opts);
-		if (ret != 0) { return ret; }
+		run_inference(opts);
 	}
 	return 0;
 }

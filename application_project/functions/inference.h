@@ -1,10 +1,13 @@
 #ifndef LENET_INF
 #define LENET_INF
 
+#include <string>
+#include <vector>
+
 #include "../settings.h"
 
-int run_inference(Settings &opts);
+void run_inference(Settings &opts);
 
-int lenet_inference(torch::Tensor imgs, Settings &opts);
+void lenet_inference(std::vector<std::string> &fImgs, Settings &opts);
 
 #endif

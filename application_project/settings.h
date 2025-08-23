@@ -15,8 +15,8 @@ struct MnistOpts
 	std::string fTestLabels = "D:/datasets/mnist/t10k-labels.idx1-ubyte";
 
 	std::string inferenceDataPath = "D:/datasets/inference_imgs";
-	std::string savepath = "D:/self-studies/application_project/application_project/weights/model.pth"; // todo: fix the name
-
+	std::string savepath = "D:/self-studies/application_project/application_project/weights";
+	std::string inferenceModel = "inference"; // you can leave out the formatting like .pth, it is automatically added
 	int imgsz = 28;
 	int imgresz = 32;
 	size_t trainBS = 128;

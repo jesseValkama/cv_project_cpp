@@ -3,19 +3,22 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <stdint.h>
 #include <torch/torch.h>
 
 #include "common.h"
 #include "../settings.h"
 
-LeNetImpl::LeNetImpl(int nc, int imgsz)
+LeNetImpl::LeNetImpl(int nc, int imgsz, bool fmvis)
 {
+	cache = fmvis;
+
 	conv1 = ConvBlock(cb1);
 	mPool1 = nn::MaxPool2d(nn::MaxPool2dOptions(mp1.ks).stride(mp1.s));
 	conv2 = ConvBlock(cb2);
 	mPool2 = nn::MaxPool2d(nn::MaxPool2dOptions(mp2.ks).stride(mp2.s));
-
+	
 	int64_t sz = dynamicFC(imgsz, cb1, mp1, cb2, mp2);
 	fc1 = nn::Linear(nn::LinearOptions(sz,120));
 	relu1 = nn::ReLU();
@@ -41,6 +44,11 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 	x = mPool1->forward(x);
 	x = conv2->forward(x);
 	x = mPool2->forward(x);
+
+	if (cache && !is_training())
+	{
+		fm = x.clone();
+	}
 	
 	x = x.view({ x.size(0), -1 });
 	x = fc1->forward(x);
@@ -50,4 +58,14 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 	x = fc3->forward(x);
 
 	return x;
+}
+
+torch::Tensor LeNetImpl::get_fm(int fmi)
+{
+	if (!cache)
+	{
+		throw std::runtime_error("Feature map visualisation not enabled");
+	}
+	if (fmi != -1) { return fm.index({ti::Slice(), fmi, ti::Slice(), ti::Slice()}); }
+	return fm;
 }

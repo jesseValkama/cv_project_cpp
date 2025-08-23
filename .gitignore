@@ -25,6 +25,9 @@ cmake_install.cmake
 /libtorch/
 /opencv/
 
+# Weights
+/weights/working.pth
+
 # OS junk
 .DS_Store
 Thumbs.db

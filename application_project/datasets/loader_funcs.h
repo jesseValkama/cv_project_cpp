@@ -70,7 +70,9 @@ int load_mnist_info(MnistOpts& opts, Info& o, std::string type);
 * a fatal buffer overflow
 */
 
-std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols);
+cv::Mat load_png_greyscale_img(std::string path, int imgresz = -1);
+
+std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1);
 /*
 * Naive function to load mnist img
 * Requires info from load_mnist_info
@@ -78,5 +80,9 @@ std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info& 
 * Throws runtime_error
 * if either stream nor img could be opened
 */
+
+
+torch::Tensor greyscale2Tensor(cv::Mat img, int imgresz, int div = -1);
+cv::Mat Tensor2greyscale(torch::Tensor timg, bool squeeze = false, float mean = 0.1307, float stdev = 0.3081);
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef LOADMNIST_H 
 #define LOADMNIST_H
 
+#include <optional>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -14,13 +15,7 @@ typedef std::vector<std::pair<int, char>> Info;
 typedef torch::data::Example<> Batch;
 
 /*
-* TODO:
-* change functions from into return oriented
-* improve safety
-*/
-
-/*
-* Most of this file is inspired by the code from this post: 
+* MNIST loader funcs are either copied or inspired by this:
 * https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c 
 * However, the code is modified (and safer?)
 */
@@ -28,7 +23,14 @@ typedef torch::data::Example<> Batch;
 uint32_t swap_endian(uint32_t val);
 /*
 * Helper function to decode information
-* Credit: https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c 
+* Credit: https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c
+* 
+* Args:
+*	val: the value to decode
+* 
+* Returns:
+*	the decoded value
+* 
 */
 
 int check_magic(std::ifstream& fimg, std::ifstream& flabel, uint32_t labelMagic, uint32_t imgMagic, int len);
@@ -36,7 +38,16 @@ int check_magic(std::ifstream& fimg, std::ifstream& flabel, uint32_t labelMagic,
 * Helper function to check magic validity
 * Potentially unsafe
 * 
-* Return indicates conditions:
+* Args:
+*	fimg: stream for imgs
+*	flabel: stream for labels
+*	labelMagic: label magic num
+*	imgMagic: img magic num
+*	len: n bytes to read
+*
+* Returns: 
+*	0: successful
+*	1: failed (logged to terminal)
 */
 
 int check_labels(std::ifstream& fimg, std::ifstream& flabel, uint32_t& n, int len);
@@ -44,45 +55,111 @@ int check_labels(std::ifstream& fimg, std::ifstream& flabel, uint32_t& n, int le
 * Helper function to check the number of labels and images
 * Potentially unsafe
 * 
-* Return indicates conditions:
+* Args:
+*	fimg: stream for imgs
+*	flabel: stream for labels
+*	n: container for the amount of labels and imgs in the file
+*	len: n of bytes to read from the stream
+* 
+* Returns:
+*	0: successful
+*	1: failed (logged to terminal)
 */
 
 int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t& rows,
 	uint32_t& cols, uint32_t minSize, uint32_t maxSize, int len);
 /*
-* Helper function to get img sizes
+* Helper function to get img sizes and to validate the size
 * Potentially unsafe
 * 
-* Return indicates conditions
+* Args:
+*	fimg: stream for imgs
+*	flabel: stream for labels
+*	rows: n rows for each img
+*	cols: n rows for each label
+*	minSize: expected min size for the imgs
+*	maxSize: expected max size for the imgs
+*	len: the n of bytes to read from the stream
+* 
+* Returns: 
+*	0: successful
+*	1: failed (logged to terminal)
 */
 
 int load_mnist_info(MnistOpts& opts, Info& o, std::string type);
 /*
 * Naive function to read mnist info
 * Expects the img size to ALWAYS be 28x28
+* stores info in vector of relative position and label
 * Potentially unsafe
 * 
-* Returns condition,
-* 0: everything is fine
-* 1: could not open a file
+* Args:
+*	opts: options for training
+*	info: the container where to store the relative positions
+*	of each label and img
+*	type: test or train, used to determine which file to open
 * 
-* Crash:
-* a fatal buffer overflow
+* Returns:
+*	0: successful
+*	1: failed
 */
 
-cv::Mat load_png_greyscale_img(std::string path, int imgresz = -1);
+std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz = -1);
+/*
+* Loads a greyscale img from path (and potentially resizes it)
+* 
+* Args:
+*	path: path to the img
+*	imgresz: the size to resize the img to (-1 for no resize)
+* 
+* Returns:
+*	img: successful 
+*	nullopt: failed (logged to terminal)
+*/
 
-std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1);
+std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1);
 /*
 * Naive function to load mnist img
 * Requires info from load_mnist_info
 * 
-* Throws runtime_error
-* if either stream nor img could be opened
+* Args:
+*	path: path to the stream
+*	i: index of the vector for the img + label
+*	d: container for the imgs and labels (vector of pairs)
+*	rows: n of rows for the img
+*	cols: n of cols for the img
+*	imgresz: the size to resize img (-1 for no resize)
+* 
+* Returns:
+*	pair<img, char>: successful (img and label)
+*	nullopt: failed
 */
 
+torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div = -1);
+/*
+* Loads a greyscale cv::Mat into a Tensor (and normalises it, but doesn't include z scaling)
+* 
+* Args:
+*	img: the input img
+*	imgsz: the size of the img
+*	div: max value for img (usually 255) for normalisation (-1 to skip normalisation)
+* 
+* Returns:
+*	tensor: the output img
+*/
 
-torch::Tensor greyscale2Tensor(cv::Mat img, int imgresz, int div = -1);
 cv::Mat Tensor2greyscale(torch::Tensor timg, bool squeeze = false, float mean = 0.1307, float stdev = 0.3081);
+/*
+* Loads a greyscale tensor to a cv::Mat and denormalises it (presumes a z-scaled img)
+* 
+* Args:
+*	timg: img as a tensor
+*	squeeze: bool to squeeze (remove leftover from batch)
+*	mean: the mean used for z-scaling
+*	stdev: the standard deviation used for z-scaling
+* 
+* Returns:
+*	img: output cv::Mat
+*/
 
 #endif

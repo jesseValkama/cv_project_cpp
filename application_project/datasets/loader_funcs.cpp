@@ -6,7 +6,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
+#include <optional>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -32,7 +32,7 @@ int check_magic(std::ifstream &fimg, std::ifstream &flabel, uint32_t labelMagic,
 	if (magic != labelMagic)
 	{
 		std::cout << "The label magic is incorrect" << "\n";
-		return 2;
+		return 1;
 	}
 	return 0;
 }
@@ -119,12 +119,13 @@ int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 	return 0;
 }
 
-std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols, int imgresz)
+std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols, int imgresz)
 {
 	std::ifstream fimg(path, std::ios::in | std::ios::binary);
 	if (!fimg.is_open())
 	{
-		std::runtime_error("Could not open the stream");
+		std::cout << "couldn't open the stream" << std::endl;
+		return std::nullopt;
 	}
 
 	uint32_t imgsz = rows * cols;
@@ -136,7 +137,8 @@ std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info &
 	cv::Mat img(rows, cols, CV_8UC1, buf.data());
 	if (img.empty())
 	{
-		std::runtime_error("Could not open the img");
+		std::cout << "couldn't open the img" << std::endl;
+		return std::nullopt;
 	}
 	if (imgresz != -1)
 	{
@@ -146,12 +148,12 @@ std::pair<cv::Mat, char> load_mnist_img(std::string path, size_t i, const Info &
 	return std::make_pair(img.clone(), l);
 }
 
-cv::Mat load_png_greyscale_img(std::string path, int imgresz)
+std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz)
 {
 	cv::Mat img = cv::imread(path, cv::IMREAD_GRAYSCALE);
 	if (img.empty())
 	{
-		throw std::runtime_error("Couldn't load the img");
+		return std::nullopt;
 	}
 	if (imgresz != -1)
 	{
@@ -160,12 +162,12 @@ cv::Mat load_png_greyscale_img(std::string path, int imgresz)
 	return img;
 }
 
-torch::Tensor greyscale2Tensor(cv::Mat img, int imgresz, int div)
+torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div)
 {
 	torch::Tensor timg = torch::from_blob
 	(
 		img.data,
-		{ 1, imgresz, imgresz },
+		{ 1, imgsz, imgsz },
 		torch::kUInt8
 	).to(torch::kFloat);
 	if (div != -1)

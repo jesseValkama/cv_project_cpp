@@ -5,7 +5,7 @@
 
 #include <filesystem>
 #include <iostream>
-#include <stdexcept>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 * https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c 
 */
 
-void run_inference(Settings &opts)
+int run_inference(Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
 	std::vector<std::string> fImgs;
@@ -29,11 +29,13 @@ void run_inference(Settings &opts)
 	{
 		fImgs.push_back(entry.path().string());
 	}
-	
-	lenet_inference(fImgs, opts);
+	int ret = 0;
+	ret = lenet_inference(fImgs, opts);
+	if (ret != 0) { return ret; }
+	return 0;
 }
 
-void lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
+int lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 {
 	std::cout << "starting inference" << "\n";
 	
@@ -49,8 +51,9 @@ void lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 	torch::NoGradGuard no_grad;
 	for (int i = 0; i < n; ++i)
 	{
-		cv::Mat img = load_png_greyscale_img(fImgs[i], mnistOpts.imgresz);
-		torch::Tensor timg = greyscale2Tensor(img, mnistOpts.imgresz);
+		std::optional<cv::Mat> img = load_png_greyscale_img(fImgs[i], mnistOpts.imgresz);
+		if (!img.has_value()) { return 1; }
+		torch::Tensor timg = greyscale2Tensor(img.value(), mnistOpts.imgresz);
 		timg = timg.to(opts.dev);
 		timg = timg.unsqueeze(0);
 
@@ -67,17 +70,24 @@ void lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 		l = xi.item<int64_t>();
 		p = prob.item<float>(); // todo: fix the probabilities, this makes no sense
 		std::cout << std::fixed << std::setprecision(6) << "The output is: " << l << ", with the probability of: " << p << std::endl;
-
-		torch::Tensor tfm = model->get_fm(0); // todo visualise
-		tfm.squeeze_(0);
-		cv::Mat fm = Tensor2greyscale(tfm, true);
-		cv::Mat cm;
-		cv::applyColorMap(fm, cm, cv::COLORMAP_DEEPGREEN);
-		cv::resize(cm, cm, cv::Size(100, 100));
 		
-		/*cv::namedWindow("fmvis", cv::WINDOW_AUTOSIZE);
-		cv::imshow("fmvis", cm);
-		cv::waitKey(0);
-		cv::destroyWindow("fmvis");*/
+		std::optional<torch::Tensor> tfm = model->get_fm(0);
+		if (!tfm.has_value()) { return 2; }
+		visualise_fm(tfm.value());
 	}
+	return 0;
+}
+
+void visualise_fm(torch::Tensor tfm)
+{
+	tfm.squeeze_(0);
+	cv::Mat fm = Tensor2greyscale(tfm, true);
+	cv::Mat cm;
+	cv::applyColorMap(fm, cm, cv::COLORMAP_DEEPGREEN);
+	cv::resize(cm, cm, cv::Size(100, 100));
+	
+	cv::namedWindow("fmvis", cv::WINDOW_AUTOSIZE);
+	cv::imshow("fmvis", cm);
+	cv::waitKey(0);
+	cv::destroyWindow("fmvis");
 }

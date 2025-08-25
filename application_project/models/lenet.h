@@ -2,7 +2,7 @@
 #define LENET_H
 
 #include <cassert>
-#include <memory>
+#include <optional>
 
 #include <torch/torch.h>
 
@@ -17,7 +17,16 @@ struct LeNetImpl : torch::nn::Module
 	/*
 	* The model comes from this post 
 	* https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python
-	* This model does not process image sizes other than 32x32, as the original LeNet did
+	* the model dynamically calculates the size for the fully connected layer
+	* 
+	* Attributes:
+	*	cb1: settings for the 1st convblock
+	*	cb2: settings for the 2nd convblock
+	*	mp1: settings for the 1st maxpool
+	*	mp2: settings for the 2nd maxpool
+	*	ptrs: ptrs to the blocks
+	*	cache: bool to cache a feature map for visualisation
+	*	fm: the cached feature map
 	*/
 
 	ConvBlockParams cb1 = { 1, 6, 5, 1, 0, 6 };
@@ -40,7 +49,18 @@ struct LeNetImpl : torch::nn::Module
 
 	LeNetImpl(int nc, int imgsz, bool fmvis = false);
 	torch::Tensor forward(torch::Tensor x);
-	torch::Tensor get_fm(int fi = -1);
+	std::optional<torch::Tensor> get_fm(int fmi = -1);
+	/*
+	* Getter function for the cached featuremap
+	* returns either all feature maps or a specific one
+	* 
+	* Args:
+	*	fmi: index for the feature map, use -1 for all feature maps
+	* 
+	* Returns:
+	*	feature map: success
+	*	nullopt: failed (logged to terminal)
+	*/
 };
 
 TORCH_MODULE(LeNet);

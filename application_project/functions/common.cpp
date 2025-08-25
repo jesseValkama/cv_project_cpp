@@ -15,22 +15,15 @@
 
 bool early_stopping(int mem, bool imp)
 {
-
-	/*
-	* Automatically stops training if mem 
-	* amount of validations have passed and
-	* the model hasn't improved in any of them
-	* 
-	* Args:
-	* mem, the amount of validations stored to 
-	* imp, whether the model improved last epoch
-	*/
-
 	static int dec = 0;
 	if (!imp)
 	{
 		std::cout << "The model did not improve" << std::endl;
 		dec++;
+	}
+	else
+	{
+		dec = 0;
 	}
 	if (dec >= mem)
 	{
@@ -116,7 +109,7 @@ void MetricsContainer::print_metrics()
 	std::cout << "accuracy: " << metrics["accuracy"] << std::endl;
 }
 
-void calc_cm(torch::Tensor labels, torch::Tensor logits, MetricsContainer &mc)
+void calc_cm(torch::Tensor &labels, torch::Tensor &logits, MetricsContainer &mc)
 {
 	/*
 	* never done this before so i had to study it: 
@@ -166,8 +159,6 @@ void calc_cm(torch::Tensor labels, torch::Tensor logits, MetricsContainer &mc)
 		prob = prob.to(torch::kCPU);
 		int64_t p = xi.item<int64_t>();
 		int64_t l = label.item<int64_t>();
-		
-		// TODO: construct the cm
 		
 		std::pair<int64_t, int64_t> pair = std::make_pair(l, p);
 		if (p == l)

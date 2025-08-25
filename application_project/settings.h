@@ -37,7 +37,7 @@ struct Settings
 	size_t maxEpochs = 16;
 	size_t valInterval = 2;
 	float learningRate = 0.005;
-	size_t IntervalsBeforeEarlyStopping = 2;
+	size_t IntervalsBeforeEarlyStopping = 1; // unnecessary for lenet, but could be useful for a more complex model
 	bool automatedMixedPrecision = false;
 };
 

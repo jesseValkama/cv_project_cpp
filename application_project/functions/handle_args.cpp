@@ -1,16 +1,18 @@
 #include "handle_args.h"
 
-#include <stdexcept>
+#include <iostream>
+#include <optional>
 #include <string>
 #include <string.h>
 #include <unordered_map>
 
-std::unordered_map<std::string, bool> handle_args(int argc, char *argv[])
+std::optional<std::unordered_map<std::string, bool>> handle_args(int argc, char *argv[])
 {
 	std::unordered_map<std::string, bool> requiredArgs = { {"train", false}, {"test", false}, {"inference", false} };
 	if (requiredArgs.size() * 2 != argc - 1)
 	{
-		throw std::invalid_argument("Incorrect n of command-line arguments");
+		std::cout << "Incorrect n of command-line arguments" << std::endl;
+		return std::nullopt;
 	}
 	std::string key = "";
 	std::string v = "";
@@ -33,20 +35,24 @@ std::unordered_map<std::string, bool> handle_args(int argc, char *argv[])
 	return requiredArgs;
 }
 
-void handle_flags(std::unordered_map<std::string, bool>& requiredArgs, std::string &key)
+int handle_flags(std::unordered_map<std::string, bool>& requiredArgs, std::string &key)
 {
 	if (!(requiredArgs.find(key) != requiredArgs.end()))
 	{
-		throw std::invalid_argument("Unexpected command-line argument");
+		std::cout << "unexpected command-line argument" << std::endl;
+		return 1;
 	}
+	return 0;
 }
 
-void handle_values(std::unordered_map<std::string, bool> &requiredArgs, std::string &key, std::string &v)
+ int handle_values(std::unordered_map<std::string, bool> &requiredArgs, std::string &key, std::string &v)
 {
 	if (v != "0" && v != "1")
 	{
-		throw std::invalid_argument("Expected value to be 0 or 1");
+		std::cout << "expected value to be 0 or 1" << std::endl;
+		return 1;
 	}
 	bool m = (v == "1") ? true : false;
 	requiredArgs[key] = m;
+	return 0;
 }

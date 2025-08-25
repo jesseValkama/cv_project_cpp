@@ -13,25 +13,25 @@ int main(int argc, char *argv[])
 	* todo:
 	*
 	* check vectors (optimisation)
-	* check strings (unsafe?)
 	* check file reading (unsafe)
 	* check type casts in funcs/common and inf (f auto)
-	* add docstrings
-	* add readme
-	* todo errors
+	* complete readme
+	* add unit tests
 	*/
-	std::unordered_map<std::string, bool> args = handle_args(argc, argv);
+	std::optional<std::unordered_map<std::string, bool>> args = handle_args(argc, argv);
+	if (!args.has_value()) { return 1; }
 	Settings opts;
 	int ret = 0;
 
-	if (args["train"] || args["test"])
+	if (args.value()["train"] || args.value()["test"])
 	{
-		ret = lenet_loop(opts, args["train"], args["test"]);
+		ret = lenet_loop(opts, args.value()["train"], args.value()["test"]);
 		if (ret != 0) { return ret; }
 	}
-	if (args["inference"])
+	if (args.value()["inference"])
 	{
-		run_inference(opts);
+		ret = run_inference(opts);
+		if (ret != 0) { return ret; }
 	}
 	return 0;
 }

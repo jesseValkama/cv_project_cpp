@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <iostream>
-#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <stdint.h>
 #include <torch/torch.h>
@@ -60,11 +60,11 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 	return x;
 }
 
-torch::Tensor LeNetImpl::get_fm(int fmi)
+std::optional<torch::Tensor> LeNetImpl::get_fm(int fmi)
 {
 	if (!cache)
 	{
-		throw std::runtime_error("Feature map visualisation not enabled");
+		return std::nullopt;
 	}
 	if (fmi != -1) { return fm.index({ti::Slice(), fmi, ti::Slice(), ti::Slice()}); }
 	return fm;

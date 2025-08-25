@@ -8,14 +8,15 @@
 class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 {
 	/*
-		* Code for the MNIST dataset with imgs of 28 x 28
-		* Args:
-		* info: contains a vector of pairs with each imgs relative
-		* position within the ubyte files and a corresponding label
-		* 
-		* mnistOpts: constains info about training like batchsizes and imgsizes
-		* 
+	* Custom dataset for mnist
+	* 
+	* Attributes:
+	*	info: container for the img and label positions in the ubyte file
+	*	minstOpts: options for loading the images such as sizes
+	*	type: determines which file to open, train or test (train and val) are
+	*	read from the same file
 	*/
+
 	const Info info;
 	const MnistOpts mnistOpts;
 	const std::string type;
@@ -23,9 +24,24 @@ class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 	public:
 		MnistDataset(const Info& info, const MnistOpts& mnistOpts, const std::string type) 
 			: info(info), mnistOpts(mnistOpts), type(type) {}
-		
+				
 		Batch get(size_t i);
+		/*
+		* Get method used by the libtorch dataloader, by loading imgs from dataset info 
+		* 
+		* Args:
+		*	i: the index of the img and label in the container
+		* 
+		* Returns:
+		*	batch: img as a tensor and the corresponding label (only a single pair)
+		*/
 		torch::optional<size_t> size() const;
+		/*
+		* Gets the length of the container (n of imgs and labels)
+		* 
+		* Returns:
+		*	the length of the container
+		*/
 };
 
 #endif

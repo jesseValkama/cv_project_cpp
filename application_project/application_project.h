@@ -1,8 +1,6 @@
-﻿// application_project.h : Include file for standard system include files,
-// or project specific include files.
+﻿#ifndef MAIN_H
+#define MAIN_H
 
-#pragma once
+int main(int argc, char *argv[]);
 
-#include <iostream>
-
-// TODO: Reference additional headers your program requires here.
+#endif

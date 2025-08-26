@@ -1,6 +1,7 @@
 #ifndef LOADMNIST_H 
 #define LOADMNIST_H
 
+#include <fstream>
 #include <optional>
 #include <stdint.h>
 #include <string>
@@ -11,7 +12,7 @@
 
 #include "../settings.h"
 
-typedef std::vector<std::pair<int, char>> Info;
+typedef std::vector<std::pair<std::streampos, char>> Info;
 typedef torch::data::Example<> Batch;
 
 /*
@@ -50,7 +51,7 @@ int check_magic(std::ifstream& fimg, std::ifstream& flabel, uint32_t labelMagic,
 *	1: failed (logged to terminal)
 */
 
-int check_labels(std::ifstream& fimg, std::ifstream& flabel, uint32_t& n, int len);
+int check_labels(std::ifstream &fimg, std::ifstream &flabel, uint32_t &n, int len);
 /*
 * Helper function to check the number of labels and images
 * Potentially unsafe

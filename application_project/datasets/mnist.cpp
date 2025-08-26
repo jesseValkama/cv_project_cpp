@@ -17,7 +17,7 @@ Batch MnistDataset::get(size_t i)
 	// train and val in the same file
 	std::string fImgs = (type == "train" || type == "val") ? mnistOpts.fTrainImgs : mnistOpts.fTestImgs;
 	
-	// console notifies if problems arise with opening stream or img
+	// console notifies if problems arise with opening stream or img, naive, since it doesn't loop through all
 	int n = info.size();
 	for (size_t j = i; j < n; ++j)
 	{

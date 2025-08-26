@@ -21,13 +21,26 @@ int check_magic(std::ifstream &fimg, std::ifstream &flabel, uint32_t labelMagic,
 {
 	uint32_t magic = 0;
 	fimg.read(reinterpret_cast<char*>(&magic), len);
+	if (!fimg)
+	{
+		std::cout << "Failed to read the stream" << std::endl;
+		return 1;
+	}
+
 	magic = swap_endian(magic);
 	if (magic != imgMagic)
 	{
 		std::cout << "The img magic is incorrect" << "\n";
 		return 1;
 	}
+
 	flabel.read(reinterpret_cast<char*>(&magic), len);
+	if (!flabel)
+	{
+		std::cout << "Failed to read the stream" << std::endl;
+		return 1;
+	}
+
 	magic = swap_endian(magic);
 	if (magic != labelMagic)
 	{
@@ -41,7 +54,19 @@ int check_labels(std::ifstream &fimg, std::ifstream &flabel, uint32_t &n, int le
 {
 	uint32_t nImgs = 0, nLabels = 0;
 	fimg.read(reinterpret_cast<char*>(&nImgs), len);
+	if (!fimg)
+	{
+		std::cout << "Failed to read the stream" << std::endl;
+		return 1;
+	}
+
 	flabel.read(reinterpret_cast<char*>(&nLabels), len);
+	if (!flabel)
+	{
+		std::cout << "Failed to read the stream" << std::endl;
+		return 1;
+	}
+
 	nImgs = swap_endian(nImgs);
 	nLabels = swap_endian(nLabels);
 	if (nImgs != nLabels)
@@ -57,7 +82,19 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows,
 	uint32_t &cols, uint32_t minSize, uint32_t maxSize, int len)
 {
 	fimg.read(reinterpret_cast<char*>(&rows), len);
+	if (!fimg)
+	{
+		std::cout << "Failed to read the stream" << std::endl;
+		return 1;
+	}
+
 	fimg.read(reinterpret_cast<char*>(&cols), len);
+	if (!fimg)
+	{
+		std::cout << "Failed to read the stream" << std::endl;
+		return 1;
+	}
+
 	rows = swap_endian(rows);
 	cols = swap_endian(cols);
 	uint32_t size = rows * cols;
@@ -104,16 +141,34 @@ int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 	}
 	
 	char label;
-	int pos = 0;
+	std::streampos pos = 0;
 	int size = static_cast<int>(rows) * static_cast<int>(cols);
+	o.reserve(n);
 	// naive since, it expects all images to be the same size
 	for (int i = 0; i < n; ++i)
 	{
 		flabel.read(&label, 1);
+		if (!flabel)
+		{
+			std::cout << "Failed to read the stream" << std::endl;
+			return 1;
+		}
+
 		pos = fimg.tellg();
+		if (pos == std::streampos(-1)) // should be correct, geeksforgeeks is not great
+		{
+			std::cout << "Failed to read the stream" << std::endl;
+			return 1;
+		}
+
 		o.push_back(std::make_pair(pos, label));
 		pos += size;
 		fimg.seekg(pos, std::ios::beg);
+		if (!fimg)
+		{
+			std::cout << "Failed to read the stream" << std::endl;
+			return 1;
+		}
 	}
 
 	return 0;
@@ -129,11 +184,24 @@ std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t 
 	}
 
 	uint32_t imgsz = rows * cols;
-	int pos = d[i].first;
+	std::streampos pos = d[i].first;
 	char l = d[i].second;
 	std::vector<char> buf(imgsz);
+
 	fimg.seekg(pos, std::ios::beg);
+	if (!fimg)
+	{
+		std::cout << "Couldn't read the stream" << std::endl;
+		return std::nullopt;
+	}
+
 	fimg.read(buf.data(), buf.size());
+	if (!fimg)
+	{
+		std::cout << "Couldn't read the stream" << std::endl;
+		return std::nullopt;
+	}
+
 	cv::Mat img(rows, cols, CV_8UC1, buf.data());
 	if (img.empty())
 	{

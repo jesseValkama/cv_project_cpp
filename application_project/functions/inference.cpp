@@ -27,7 +27,7 @@ int run_inference(Settings &opts)
 	std::vector<std::string> fImgs;
 	for (const auto& entry : fs::directory_iterator(mnistOpts.inferenceDataPath))
 	{
-		fImgs.push_back(entry.path().string());
+		fImgs.emplace_back(entry.path().string());
 	}
 	int ret = 0;
 	ret = lenet_inference(fImgs, opts);
@@ -47,6 +47,7 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 	model->eval();
 	int64_t p = 0, l = 0;
 	
+	cv::namedWindow("fmvis", cv::WINDOW_AUTOSIZE);
 	int n = fImgs.size();
 	torch::NoGradGuard no_grad;
 	for (int i = 0; i < n; ++i)
@@ -75,6 +76,7 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 		if (!tfm.has_value()) { return 2; }
 		visualise_fm(tfm.value());
 	}
+	cv::destroyWindow("fmvis");
 	return 0;
 }
 
@@ -86,8 +88,6 @@ void visualise_fm(torch::Tensor tfm)
 	cv::applyColorMap(fm, cm, cv::COLORMAP_DEEPGREEN);
 	cv::resize(cm, cm, cv::Size(100, 100));
 	
-	cv::namedWindow("fmvis", cv::WINDOW_AUTOSIZE);
 	cv::imshow("fmvis", cm);
 	cv::waitKey(0);
-	cv::destroyWindow("fmvis");
 }

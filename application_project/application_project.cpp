@@ -1,8 +1,10 @@
-﻿#include "settings.h"
+﻿#include "application_project.h"
 
-#include <unordered_map>
+#include <optional>
 #include <string>
+#include <unordered_map>
 
+#include "settings.h"
 #include "functions/handle_args.h"
 #include "functions/inference.h"
 #include "functions/train_lenet.h"
@@ -12,8 +14,6 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	*
-	* check vectors (optimisation)
-	* check file reading (unsafe)
 	* check type casts in funcs/common and inf (f auto)
 	* complete readme
 	* add unit tests

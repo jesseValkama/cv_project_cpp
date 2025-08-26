@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <torch/torch.h>
-#include <opencv2/opencv.hpp> // used for debugging, remember to remove at some point
 
 #include "../datasets/mnist.h"
 #include "../datasets/loader_funcs.h"
@@ -19,11 +18,22 @@
 #include "../settings.h"
 #include "common.h"
 
+constexpr const char *ANSI_END = "\033[0m";
+constexpr const char *ANSI_GREEN = "\033[32m";
+constexpr const char *ANSI_MAGENTA = "\033[35m";
+constexpr const char *ANSI_RED = "\033[31m";
+constexpr const char *ANSI_YELLOW = "\033[33m";
+
 namespace nn = torch::nn;
+
+/*
+* Inspiration:
+*	https://github.com/pytorch/examples/tree/main/cpp/mnist
+*/
 
 int lenet_loop(Settings &opts, bool train, bool test)
 {
-	std::cout << "\033[35m" << "Starting to train lenet" << "\033[0m" << "\n";
+	std::cout << ANSI_MAGENTA << "Starting to train lenet" << ANSI_END << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	
 	// TODO: split train into train and val
@@ -40,8 +50,9 @@ int lenet_loop(Settings &opts, bool train, bool test)
 	{
 		return status;
 	}
+
+	// auto should be justified, since the datatypes are selfexplenatory and really long to typedef
 	auto [trainInfo, valInfo] = split_train_val_info(trainValInfo, 0.85);
-	
 	auto trainset = MnistDataset(trainInfo, mnistOpts, "train")
 		.map(torch::data::transforms::Normalize<>(
 			{mnistOpts.mean}, {mnistOpts.stdev}))
@@ -84,7 +95,7 @@ int lenet_loop(Settings &opts, bool train, bool test)
 		status = lenet_test(*testloader, opts);
 		if (status == 1)
 		{
-			std::cout << "\033[31m" << "The testing failed, fatal" << "\033[0m" << std::endl;
+			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
 	}
@@ -110,7 +121,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 
 	for (size_t epoch = 1; epoch <= opts.maxEpochs; ++epoch)
 	{	
-		std::cout << "\033[32m" << "Epoch: " << epoch << "\033[0m" << std::endl;
+		std::cout << ANSI_GREEN << "Epoch: " << epoch << ANSI_END << std::endl;
 		model->train();
 
 		float trainLoss = 0.0;
@@ -126,7 +137,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 			torch::Tensor loss = lossFn(outputs, labels);
 			if (std::isnan(loss.template item<float>()))
 			{
-				std::cout << "\033[31m" << "Training is unstable, change settings" << "\033[0m" << std::endl;
+				std::cout << ANSI_RED << "Training is unstable, change settings" << ANSI_END << std::endl;
 				return 1;
 			}
 			loss.backward();
@@ -139,14 +150,14 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 		trainLoss /= i;
 
 		// TODO: visualise the train loss with opencv
-		std::cout << "\033[35m" << "Train loss: " << trainLoss << "\033[0m" << std::endl;
+		std::cout << ANSI_MAGENTA << "Train loss: " << trainLoss << ANSI_END << std::endl;
 
 		if (epoch % opts.valInterval == 0)
 		{
 			ret = lenet_val(model, valloader, bestValLoss, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
-				std::cout << "\033[31m" << "The training failed, fatal" << "\033[0m" << std::endl;
+				std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 				return 1;
 			}
 			stop = early_stopping(opts.IntervalsBeforeEarlyStopping, valImprov);
@@ -178,7 +189,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 		torch::Tensor loss = lossFn(outputs, labels);
 		if (std::isnan(loss.template item<float>()))
 		{
-			std::cout << "\033[31m" << "Validation is unstable, change parameters" << "\033[0m" << std::endl;
+			std::cout << ANSI_RED << "Validation is unstable, change parameters" << ANSI_END << std::endl;
 			return 1;
 		}
 		i++;
@@ -187,7 +198,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	valLoss /= i;
 	
 	// TODO visualise
-	std::cout << "\033[35m" << "The validation loss is: " << valLoss << "\033[0m" << std::endl;
+	std::cout << ANSI_MAGENTA << "The validation loss is: " << valLoss << ANSI_END << std::endl;
 	
 	// < is used to avoid false improvements
 	imp = false;
@@ -197,7 +208,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 		torch::save(model, mnistOpts.savepath + "/working.pth");
 		bestValLoss = valLoss;
 		imp = true;
-		std::cout << "\033[33m" << "The model improved" << "\033[0m" << std::endl;
+		std::cout << ANSI_YELLOW << "The model improved" << ANSI_END << std::endl;
 	}
 
 	return 0;
@@ -206,7 +217,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 template<typename Dataloader>
 int lenet_test(Dataloader &testloader, Settings &opts)
 {
-	std::cout << "\033[35m" << "Starting testing" << "\033[0m" << "\n";
+	std::cout << ANSI_MAGENTA << "Starting testing" << ANSI_END << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
 	torch::load(model, mnistOpts.savepath + "/working.pth");

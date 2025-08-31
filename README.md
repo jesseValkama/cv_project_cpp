@@ -17,11 +17,11 @@ Here is a list of dependencies. However, some of them might not be required,
 but no alternatives are tested.
 
 * Windows 11
-* Visual Studio 2022 (17.14.10)
+* Visual Studio 2022 (17.14.10) (recommended)
 * nvidia rtx 2070 super (any card thats supports cuda 12.6 should be fine, if using gpu)
 
-* msvc v143 for (x64/x86) (14.40-17.10)
-* ninja (1.12.1)
+* msvc v143 for (x64/x86) (14.40-17.10) (recommended)
+* ninja (1.12.1) (recommended)
 * cmake (3.31.6) (required)
 * mnist dataset (if you want to train a model by yourself, i donwloaded mine from kaggle)
 * Image Watch for Visual Studio 2022 (you can visualise imgs when debugging)
@@ -42,8 +42,13 @@ the paths of the directories. In addition, have a look at the cmake files and
 change the directories there. Lastly, if you haven't done yet so, you need to add
 cuda, libtorch and opencv to path.
 
+TODO: (I use VS 2022 so these are complex):
+
 ```
-cmake ..
+cmake -S <src> . -B <out/build> -G Ninja -B -DCMAKE_CXX_COMPILER=cl --config Debug
+```
+```
+cmake --build <build> J <nThreads>
 ```
 ```
 ./application_project train x test x inference x

@@ -1,6 +1,7 @@
 #ifndef EARLYSTOP_H 
 #define EARLYSTOP_H
 
+#include <optional>
 #include <stdint.h>
 #include <unordered_map>
 #include <string>

@@ -10,7 +10,9 @@ set(CMAKE_PREFIX_PATH "D:/cpptools/libtorch;C:/Program Files/NVIDIA GPU Computin
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
 
-include_directories(${OPENCV_INCLUDE_DIRS})
+include_directories(
+    ${OPENCV_INCLUDE_DIRS}
+)
 target_link_libraries(application_project "${TORCH_LIBRARIES}" ${OpenCV_LIBS})
 
 set_property(TARGET application_project PROPERTY CXX_STANDARD 17)
@@ -33,3 +35,5 @@ if (MSVC)
             $<TARGET_FILE_DIR:application_project>
     )
 endif(MSVC)
+
+add_subdirectory(tests)

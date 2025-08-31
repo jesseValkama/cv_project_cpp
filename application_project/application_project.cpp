@@ -15,8 +15,9 @@ int main(int argc, char *argv[])
 	* todo:
 	*
 	* check type casts in funcs/common and inf (f auto)
+	* fix probabilites
 	* complete readme
-	* add unit tests
+	* add unit tests (does googletest even work?)
 	*/
 	std::optional<std::unordered_map<std::string, bool>> args = handle_args(argc, argv);
 	if (!args.has_value()) { return 1; }

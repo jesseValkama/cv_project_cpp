@@ -7,7 +7,8 @@ A simple LeNet MNIST classification project with cpp (to "prove" my cpp skills).
 This project includes a custom training loop for lenet. The testing includes metrics
 such as recall, precision and accuracy with a confusion matrix. In addition, the
 inference supports png images (I made mine in paint). Inference also supports
-feature map visualisations.
+feature map visualisations (they are still in progress, as implementing CAMs
+from scratch is difficult).
 
 ## Getting Started
 
@@ -42,8 +43,11 @@ the paths of the directories. In addition, have a look at the cmake files and
 change the directories there. Lastly, if you haven't done yet so, you need to add
 cuda, libtorch and opencv to path.
 
-TODO: (I use VS 2022 so these are complex):
+TODO fix this (easier to compile and run with vs 2022):
 
+```
+git clone https://github.com/jesseValkama/cv_project_cpp
+```
 ```
 cmake -S <src> . -B <out/build> -G Ninja -B -DCMAKE_CXX_COMPILER=cl --config Debug
 ```

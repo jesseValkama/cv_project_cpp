@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 	*
 	* check type casts in funcs/common and inf (f auto)
 	* fix probabilites
+	* make proper feature map visualisations (not just one of the fms)
 	* complete readme
 	* add unit tests (does googletest even work?)
 	*/

@@ -245,14 +245,19 @@ torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div)
 	return timg;
 }
 
-cv::Mat Tensor2greyscale(torch::Tensor timg, bool squeeze, float mean, float stdev)
+std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg, bool squeeze, std::pair<float, float> scale)
 {
 	torch::Tensor dbg = timg.detach().cpu();
 	if (squeeze) { dbg.squeeze_(); }
-	dbg = dbg.mul(stdev).add(mean);
-	dbg = dbg.mul(255).clamp(0, 255).to(torch::kUInt8);
 
-	int h = dbg.size(0), w = dbg.size(1);
-	cv::Mat img(h, w, CV_8UC1, dbg.data_ptr());
+	if (scale.first != -1.0 && scale.second != -1.0)
+	{
+		dbg = dbg.mul(scale.first).add(scale.second).mul(255).clamp(0,255);
+	}
+	dbg = dbg.to(torch::kUInt8);
+
+	cv::Mat img(dbg.size(0), dbg.size(1), CV_8UC1, dbg.data_ptr());
+	if (img.empty()) { return std::nullopt; }
+
 	return img.clone();
 }

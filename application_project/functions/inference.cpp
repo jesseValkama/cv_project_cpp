@@ -1,6 +1,7 @@
 #include "inference.h"
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgproc.hpp>
 #include <torch/torch.h>
 
 #include <filesystem>
@@ -11,8 +12,10 @@
 
 #include "../datasets/loader_funcs.h"
 #include "../datasets/mnist.h"
+#include "../functions/gradcam.h"
 #include "../models/lenet.h"
 #include "../settings.h"
+#include "visualise.h"
 
 namespace fs = std::filesystem;
 
@@ -21,7 +24,7 @@ namespace fs = std::filesystem;
 * https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c 
 */
 
-int run_inference(Settings &opts)
+int run_inference(Settings &opts, int idx)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
 	std::vector<std::string> fImgs;
@@ -30,12 +33,12 @@ int run_inference(Settings &opts)
 		fImgs.emplace_back(entry.path().string());
 	}
 	int ret = 0;
-	ret = lenet_inference(fImgs, opts);
+	ret = lenet_inference(fImgs, opts, idx);
 	if (ret != 0) { return ret; }
 	return 0;
 }
 
-int lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
+int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, int idx)
 {
 	std::cout << "starting inference" << "\n";
 	
@@ -46,17 +49,17 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 	model->to(opts.dev);
 	model->eval();
 	int64_t p = 0, l = 0;
+	int ret = 0;
 	
 	cv::namedWindow("fmvis", cv::WINDOW_AUTOSIZE);
 	int n = fImgs.size();
-	torch::NoGradGuard no_grad;
+	//torch::NoGradGuard no_grad;
 	for (int i = 0; i < n; ++i)
 	{
 		std::optional<cv::Mat> img = load_png_greyscale_img(fImgs[i], mnistOpts.imgresz);
 		if (!img.has_value()) { return 1; }
 		torch::Tensor timg = greyscale2Tensor(img.value(), mnistOpts.imgresz);
-		timg = timg.to(opts.dev);
-		timg = timg.unsqueeze(0);
+		timg = timg.to(opts.dev).unsqueeze_(0);
 
 		torch::Tensor logits = model->forward(timg);
 		torch::Tensor preds = torch::softmax(logits, 1);
@@ -72,22 +75,22 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts)
 		p = prob.item<float>(); // todo: fix the probabilities, this makes no sense
 		std::cout << std::fixed << std::setprecision(6) << "The output is: " << l << ", with the probability of: " << p << std::endl;
 		
-		std::optional<torch::Tensor> tfm = model->get_fm(0);
+		if (idx == -2) { continue; }
+
+		std::optional<torch::Tensor> tfm = model->get_fm(idx);
 		if (!tfm.has_value()) { return 2; }
-		visualise_fm(tfm.value());
+
+		if (idx == -1)
+		{
+			ret = gradcam(logits[0][xi], tfm.value(), timg);
+			if (ret != 0) { return ret; }
+		}
+		else
+		{
+			ret = visualise_fm(tfm.value().squeeze_(0), timg, cv::COLORMAP_DEEPGREEN);
+			if (ret != 0) { return ret; }
+		}
 	}
 	cv::destroyWindow("fmvis");
 	return 0;
-}
-
-void visualise_fm(torch::Tensor tfm)
-{
-	tfm.squeeze_(0);
-	cv::Mat fm = Tensor2greyscale(tfm, true);
-	cv::Mat cm;
-	cv::applyColorMap(fm, cm, cv::COLORMAP_DEEPGREEN);
-	cv::resize(cm, cm, cv::Size(100, 100));
-	
-	cv::imshow("fmvis", cm);
-	cv::waitKey(0);
 }

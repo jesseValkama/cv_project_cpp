@@ -47,7 +47,8 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 
 	if (cache && !is_training())
 	{
-		fm = x.clone();
+		x.retain_grad(); // unoptimised, always retains even if doing normal fm vis
+		fm = x;
 	}
 	
 	x = x.view({ x.size(0), -1 });
@@ -62,10 +63,8 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 
 std::optional<torch::Tensor> LeNetImpl::get_fm(int fmi)
 {
-	if (!cache)
-	{
-		return std::nullopt;
-	}
+	if (fmi < -1 || fmi >= fm.size(1)) { std::cout << "Bad fm index" << "\n";  return std::nullopt; }
+	if (!cache) { std::cout << "Init model for fm vis" << "\n"; return std::nullopt; }
 	if (fmi != -1) { return fm.index({ti::Slice(), fmi, ti::Slice(), ti::Slice()}); }
 	return fm;
 }

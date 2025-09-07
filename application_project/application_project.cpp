@@ -14,12 +14,15 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	*
-	* check type casts in funcs/common and inf (f auto)
 	* fix probabilites
-	* make proper feature map visualisations (not just one of the fms)
+	* add wait to early stopping
 	* complete readme
 	* add unit tests (does googletest even work?)
 	*/
+
+	// switch XAI mode here (-1 gradcam, -2 skip, otherwise idx for featuremap [0-15])
+	int XAI = -1; // 10
+
 	std::optional<std::unordered_map<std::string, bool>> args = handle_args(argc, argv);
 	if (!args.has_value()) { return 1; }
 	Settings opts;
@@ -32,7 +35,7 @@ int main(int argc, char *argv[])
 	}
 	if (args.value()["inference"])
 	{
-		ret = run_inference(opts);
+		ret = run_inference(opts, XAI);
 		if (ret != 0) { return ret; }
 	}
 	return 0;

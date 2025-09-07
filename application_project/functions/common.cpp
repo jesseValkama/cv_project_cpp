@@ -147,8 +147,8 @@ void calc_cm(torch::Tensor &labels, torch::Tensor &logits, MetricsContainer &mc)
 	
 	torch::Tensor preds = torch::softmax(logits, 1);
 	
-	auto n = preds.sizes(); // TODO: typecast to int
-	for (int i = 0; i < n[0]; ++i)
+	int n = preds.size(0);
+	for (int i = 0; i < n; ++i)
 	{
 		torch::Tensor xi = torch::argmax(preds[i]);
 		torch::Tensor prob = preds[i][xi];

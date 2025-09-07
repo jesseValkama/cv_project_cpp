@@ -149,18 +149,20 @@ torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div = -1);
 *	tensor: the output img
 */
 
-cv::Mat Tensor2greyscale(torch::Tensor timg, bool squeeze = false, float mean = 0.1307, float stdev = 0.3081);
+std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg, bool squeeze = false, std::pair<float, float> scale = { 0.1307, 0.3081 });
 /*
-* Loads a greyscale tensor to a cv::Mat and denormalises it (presumes a z-scaled img)
+* Loads a greyscale tensor to a cv::Mat.
+* Denormalisation is also possible, default z-scaling values are for mnist,
+* and use -1 on both to skip
 * 
 * Args:
 *	timg: img as a tensor
 *	squeeze: bool to squeeze (remove leftover from batch)
-*	mean: the mean used for z-scaling
-*	stdev: the standard deviation used for z-scaling
+*	scale: 1st mean and 2nd standard deviation for z-scaling
 * 
 * Returns:
 *	img: output cv::Mat
+*	nullopt: failed (logged to terminal)
 */
 
 #endif

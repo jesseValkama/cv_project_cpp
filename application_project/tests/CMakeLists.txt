@@ -1,3 +1,5 @@
+return()
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -14,8 +16,8 @@ add_executable(hello_test
 )
 
 target_link_libraries(hello_test
-	"${TORCH_LIBRARIES}" 
-	${OpenCV_LIBS}
+	#"${TORCH_LIBRARIES}" 
+	#${OpenCV_LIBS}
 	GTest::gtest
 )
 

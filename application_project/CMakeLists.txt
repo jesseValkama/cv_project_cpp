@@ -3,7 +3,9 @@
                                     "settings.cpp"
                                     "models/common.cpp" "models/lenet.cpp"
                                     "functions/common.cpp" "functions/train_lenet.cpp"
-                                    "functions/inference.cpp" "functions/handle_args.cpp")
+                                    "functions/inference.cpp" "functions/handle_args.cpp"
+                                    "functions/gradcam.cpp" "functions/visualise.cpp"
+)
 
 set(CMAKE_PREFIX_PATH "D:/cpptools/libtorch;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6;D:/cpptools/opencv/build")
 
@@ -36,4 +38,4 @@ if (MSVC)
     )
 endif(MSVC)
 
-add_subdirectory(tests)
+#add_subdirectory(tests)

@@ -7,8 +7,7 @@ A simple LeNet MNIST classification project with cpp (to "prove" my cpp skills).
 This project includes a custom training loop for lenet. The testing includes metrics
 such as recall, precision and accuracy with a confusion matrix. In addition, the
 inference supports png images (I made mine in paint). Inference also supports
-feature map visualisations (they are still in progress, as implementing CAMs
-from scratch is difficult).
+feature map visualisations either by index or gradcam (idx -1).
 
 ## Getting Started
 

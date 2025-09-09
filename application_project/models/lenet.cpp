@@ -43,14 +43,14 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 	x = conv1->forward(x);
 	x = mPool1->forward(x);
 	x = conv2->forward(x);
-	x = mPool2->forward(x);
 
 	if (cache && !is_training())
 	{
 		x.retain_grad(); // unoptimised, always retains even if doing normal fm vis
 		fm = x;
 	}
-	
+
+	x = mPool2->forward(x);
 	x = x.view({ x.size(0), -1 });
 	x = fc1->forward(x);
 	x = relu1->forward(x);

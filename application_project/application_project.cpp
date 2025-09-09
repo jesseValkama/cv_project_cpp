@@ -14,14 +14,15 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	*
+	* add idx as a command-line arg (remove form opts)
 	* fix probabilites
 	* add wait to early stopping
 	* complete readme
 	* add unit tests (does googletest even work?)
 	*/
-
-	// switch XAI mode here (-1 gradcam, -2 skip, otherwise idx for featuremap [0-15])
-	int XAI = -1; // 10
+	
+	// this is here, because the settings.h takes a while to build
+	int XAI = 10;
 
 	std::optional<std::unordered_map<std::string, bool>> args = handle_args(argc, argv);
 	if (!args.has_value()) { return 1; }

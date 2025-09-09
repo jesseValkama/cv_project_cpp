@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <stdint.h>
+
 #include <torch/torch.h>
 
 #include "../settings.h"
@@ -16,14 +17,29 @@ struct ConvBlockParams
 	int64_t ks;
 	int64_t s;
 	int64_t p;
-	int64_t bn;
 };
 
 struct MaxPoolParams
 {
 	int64_t ks;
 	int64_t s;
+	int64_t p = 0;
 };
+
+struct AvgPoolParams
+{
+	int64_t ks;
+	int64_t s;
+	int64_t p = 0;
+};
+
+struct ResidualBlockParams
+{
+	ConvBlockParams convBlockParams;
+	bool ds = false;
+	int64_t n = 0;
+};
+
 
 struct ConvBlockImpl : torch::nn::Module
 {
@@ -37,7 +53,17 @@ struct ConvBlockImpl : torch::nn::Module
 	*	ptrs: ptrs to blocks
 	*/
 	ConvBlockImpl(const ConvBlockParams& p);
-	torch::Tensor forward(torch::Tensor x);
+	torch::Tensor forward(torch::Tensor x, bool bRelu = true);
+	/*
+	* Method to forward pass the img
+	* 
+	* Args:
+	*	x: input as a Tensor
+	*	bRelu: bool whether to use relu
+	* 
+	* Returns:
+	*	Tensor: the output feature map
+	*/
 
 	nn::Conv2d conv{ nullptr };
 	nn::BatchNorm2d bn{ nullptr };
@@ -60,5 +86,19 @@ int64_t dynamicFC(int imgsz, ConvBlockParams &cb1, MaxPoolParams &mp1, ConvBlock
 * Returns:
 *	size: calculated as w * h * n of filters 
 */
+
+struct ResidualBlockImpl : torch::nn::Module
+{
+	ConvBlock conv1{ nullptr };
+	ConvBlock conv2{ nullptr };
+	ConvBlock dsBlock{ nullptr };
+	nn::ReLU relu{ nullptr };
+	ResidualBlockParams params;
+
+	ResidualBlockImpl(ResidualBlockParams &p, ConvBlock &downsample);
+	torch::Tensor forward(torch::Tensor x);
+};
+
+TORCH_MODULE(ResidualBlock);
 
 #endif

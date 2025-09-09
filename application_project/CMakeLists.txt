@@ -2,6 +2,7 @@
                                     "datasets/loader_funcs.cpp" "datasets/mnist.cpp"
                                     "settings.cpp"
                                     "models/common.cpp" "models/lenet.cpp"
+                                    "models/resnet.cpp"
                                     "functions/common.cpp" "functions/train_lenet.cpp"
                                     "functions/inference.cpp" "functions/handle_args.cpp"
                                     "functions/gradcam.cpp" "functions/visualise.cpp"

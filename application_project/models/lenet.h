@@ -29,8 +29,8 @@ struct LeNetImpl : torch::nn::Module
 	*	fm: the cached feature map
 	*/
 
-	ConvBlockParams cb1 = { 1, 6, 5, 1, 0, 6 };
-	ConvBlockParams cb2 = { 6, 16, 5, 1, 0, 16 };
+	ConvBlockParams cb1 = { 1, 6, 5, 1, 0 };
+	ConvBlockParams cb2 = { 6, 16, 5, 1, 0 };
 	MaxPoolParams mp1 = { 2, 2 };
 	MaxPoolParams mp2 = { 2, 2 };
 

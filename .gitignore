@@ -26,7 +26,7 @@ cmake_install.cmake
 /opencv/
 
 # Weights
-#/application_project/weights/working.pth
+/application_project/weights/working.pth
 
 # OS junk
 .DS_Store

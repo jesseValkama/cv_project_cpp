@@ -15,9 +15,17 @@ namespace ti = torch::indexing;
 struct LeNetImpl : torch::nn::Module
 {
 	/*
-	* The model comes from this post 
-	* https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python
-	* the model dynamically calculates the size for the fully connected layer
+	* Credits:
+	* 
+	* Official paper:
+	*	http://vision.stanford.edu/cs598_spring07/papers/Lecun98.pdf
+	* 
+	* Inspiration code:
+	*	https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python
+	* 
+	* 
+	* The model dynamically calculates the size for the fully connected layer (see dynamic_fc helper fn)
+	* In addition, it also caches the feature map with partial derivatives
 	* 
 	* Attributes:
 	*	cb1: settings for the 1st convblock

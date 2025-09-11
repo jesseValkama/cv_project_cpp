@@ -15,6 +15,17 @@ namespace nn = torch::nn;
 
 struct ResNetImpl : torch::nn::Module
 {
+	/*
+	* Credits:
+	* 
+	* Official paper:
+	*	https://arxiv.org/abs/1512.03385
+	* Inspiration code:
+	*	https://www.digitalocean.com/community/tutorials/writing-resnet-from-scratch-in-pytorch
+	* 
+	* The model is still not working
+	*/
+
 	int p = 0; // tmp
 	// the 1st is changed in the constructor method according to the input
 	ConvBlockParams cb = {0,64,7,2,p};

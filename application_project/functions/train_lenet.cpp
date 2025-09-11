@@ -15,6 +15,8 @@
 #include "../datasets/mnist.h"
 #include "../datasets/loader_funcs.h"
 #include "../models/lenet.h"
+#include "../models/resnet.h"
+#include "../models/model_wrapper.h"
 #include "../settings.h"
 #include "common.h"
 
@@ -36,7 +38,6 @@ int lenet_loop(Settings &opts, bool train, bool test)
 	std::cout << ANSI_MAGENTA << "Starting to train lenet" << ANSI_END << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	
-	// TODO: split train into train and val
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
 	Info trainValInfo, testInfo;
 	int status = 0;
@@ -107,7 +108,8 @@ template<typename Dataloader>
 int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
-	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
+	
+	std::shared_ptr<ModelWrapper> model = std::make_shared<ModelWrapper>(0, mnistOpts);
 	model->to(opts.dev);
 
 	torch::optim::Adam optimiser(model->parameters(), torch::optim::AdamOptions(opts.learningRate));
@@ -172,7 +174,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 }
 
 template<typename Dataloader>
-int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
 	model->eval();
@@ -204,8 +206,7 @@ int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::Cross
 	imp = false;
 	if (valLoss < bestValLoss)
 	{
-		// TODO: error handling if the path doesn't exist
-		torch::save(model, mnistOpts.savepath + "/working.pth");
+		model->save_model("working.pth");
 		bestValLoss = valLoss;
 		imp = true;
 		std::cout << ANSI_YELLOW << "The model improved" << ANSI_END << std::endl;
@@ -219,11 +220,12 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 {
 	std::cout << ANSI_MAGENTA << "Starting testing" << ANSI_END << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
-	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgresz);
-	torch::load(model, mnistOpts.savepath + "/working.pth");
+	std::unique_ptr<ModelWrapper> model = std::make_unique<ModelWrapper>(0, mnistOpts);
+	model->load_model("working.pth");
+
 	model->to(opts.dev);
 	model->eval();
-	MetricsContainer mc = create_mc(mnistOpts.numOfChannels);
+	MetricsContainer mc = create_mc(mnistOpts.numOfClasses);
 
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : testloader)
@@ -234,7 +236,7 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 		calc_cm(labels, outputs, mc);
 	}
 	mc.print_cm();
-	mc.calc_metrics(mnistOpts.numOfChannels);
+	mc.calc_metrics(mnistOpts.numOfClasses);
 	mc.print_metrics();
 
 	std::string ans;
@@ -245,7 +247,7 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 	if (std::regex_match(ans, rx))
 	{
 		std::cout << "Saving the model" << std::endl;
-		torch::save(model, mnistOpts.savepath + "/" + ans);
+		model->save_model(ans);
 	}
 	else
 	{

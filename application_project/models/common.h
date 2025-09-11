@@ -3,6 +3,9 @@
 
 #include <cstddef>
 #include <stdint.h>
+#include <utility>
+#include <variant>
+#include <vector>
 
 #include <torch/torch.h>
 
@@ -36,10 +39,19 @@ struct AvgPoolParams
 struct ResidualBlockParams
 {
 	ConvBlockParams convBlockParams;
-	bool ds = false;
 	int64_t n = 0;
+	std::pair<bool, int> firstStride = {false, 2};
 };
 
+// you need to update these if you add more custom blocks
+typedef std::variant<ConvBlockParams, MaxPoolParams, AvgPoolParams, ResidualBlockParams> blockTypes;
+enum ParamType
+{
+	ConvBlockType = 0,
+	MaxPoolType = 1,
+	AvgPoolType = 2,
+	ResidualBlockType = 3
+};
 
 struct ConvBlockImpl : torch::nn::Module
 {
@@ -69,22 +81,43 @@ struct ConvBlockImpl : torch::nn::Module
 	nn::BatchNorm2d bn{ nullptr };
 	nn::ReLU relu{ nullptr };
 };
-
 TORCH_MODULE(ConvBlock);
 
-int64_t dynamicFC(int imgsz, ConvBlockParams &cb1, MaxPoolParams &mp1, ConvBlockParams &cb2, MaxPoolParams &mp2);
+int64_t calc_size_reduction(int64_t sz, int64_t ks, int64_t p, int64_t s, int repeat = 1);
 /*
-* Function used to calculate dynamic input size for the fully connected layer for classification
+* Function used to calculate an individual reduction of an image or a feature map after
+* passing through a block like conv or pool
 * 
 * Args:
-*	imgsz: the original size of the imgs
-*	cb1: params for the 1st convblock
-*	mp1: params for the 1st maxpool
-*	cb2: params for the 2nd convblock
-*	mp2: params for the 2nd maxpool
+*	sz: the original size
+*	ks: kernel size
+*	p: padding
+*	s: stride
+*	repeat: how many times to repeat
+* 
+* Returns
+*	int64_t: the output size
+* 
+* Abort:
+*	if output < 1
+* 
+*/
+
+int64_t dynamic_fc(std::vector<blockTypes> &layerParams, int imgsz);
+/*
+* Function used to calculate dynamic input size for the fully connected layer for classification
+* Pooling operations are assumed to keep the number of channels the same
+* Function uses std::variant underneath the hood (layerParams)
+*	-> might need optimisations if heavier blocks are added, since libtorch forces int64_t
+* 
+* Args:
+*	layerParams: vector of block params such as ConvBlockParams, ResidualBlockParams
 * 
 * Returns:
-*	size: calculated as w * h * n of filters 
+*	int64_t: the size as w * w * nc (presumes a square img)
+* 
+* Abort:
+*	if output < 1
 */
 
 struct ResidualBlockImpl : torch::nn::Module
@@ -95,7 +128,7 @@ struct ResidualBlockImpl : torch::nn::Module
 	nn::ReLU relu{ nullptr };
 	ResidualBlockParams params;
 
-	ResidualBlockImpl(ResidualBlockParams &p, ConvBlock &downsample);
+	ResidualBlockImpl(ResidualBlockParams &p, ConvBlock downsample);
 	torch::Tensor forward(torch::Tensor x);
 };
 

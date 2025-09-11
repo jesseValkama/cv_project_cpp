@@ -64,14 +64,14 @@ struct MetricsContainer
 	*	p: the pair of predicted and ground truth classes for constructing table
 	*/
 	
-	void calc_metrics(uint32_t nc);
+	void calc_metrics(uint32_t nCls);
 	/*
 	* Method to calculate the metrics
 	* Metrics are not returned, they are constructed to the attribute metrics
 	* use print_metric() to print them
 	* 
 	* Args:
-	*	nc: the number of channels
+	*	nCls: the number of classes
 	*/
 
 	AllCm get_cm();
@@ -93,12 +93,12 @@ struct MetricsContainer
 	*/
 };
 
-MetricsContainer create_mc(uint32_t nc);
+MetricsContainer create_mc(uint32_t nCls);
 /*
 * Creates the metrics container
 * 
 * Args:
-*	nc: number of channels (metrics stored channel-wise)
+*	nCls: number of classes (metrics stored class-wise)
 * 
 * Returns:
 *	metrics container: see the class for more info

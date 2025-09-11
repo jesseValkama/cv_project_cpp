@@ -6,6 +6,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -13,7 +14,7 @@
 #include "../datasets/loader_funcs.h"
 #include "../datasets/mnist.h"
 #include "../functions/gradcam.h"
-#include "../models/lenet.h"
+#include "../models/model_wrapper.h"
 #include "../settings.h"
 #include "visualise.h"
 
@@ -40,12 +41,12 @@ int run_inference(Settings &opts, int idx)
 
 int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, int idx)
 {
-	std::cout << "starting inference" << "\n";
+	std::cout << "Starting inference" << std::endl;
 	
 	MnistOpts mnistOpts = opts.mnistOpts;
-	LeNet model(mnistOpts.numOfChannels, mnistOpts.imgsz, true);
+	std::unique_ptr<ModelWrapper> model = std::make_unique<ModelWrapper>(0, mnistOpts, true);
 	std::string fModel = mnistOpts.savepath + "/" + mnistOpts.inferenceModel + ".pth";
-	torch::load(model, fModel);
+	model->load_model(mnistOpts.inferenceModel + ".pth");
 	model->to(opts.dev);
 	model->eval();
 	int64_t p = 0, l = 0;

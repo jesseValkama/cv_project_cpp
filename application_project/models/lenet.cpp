@@ -10,7 +10,7 @@
 #include "common.h"
 #include "../settings.h"
 
-LeNetImpl::LeNetImpl(int nc, int imgsz, bool fmvis)
+LeNetImpl::LeNetImpl(int nCls, int imgsz, bool fmvis)
 {
 	cache = fmvis;
 
@@ -19,12 +19,14 @@ LeNetImpl::LeNetImpl(int nc, int imgsz, bool fmvis)
 	conv2 = ConvBlock(cb2);
 	mPool2 = nn::MaxPool2d(nn::MaxPool2dOptions(mp2.ks).stride(mp2.s));
 	
-	int64_t sz = dynamicFC(imgsz, cb1, mp1, cb2, mp2);
+	int64_t sz = dynamic_fc(layerParams, imgsz);
+	layerParams.clear();
+
 	fc1 = nn::Linear(nn::LinearOptions(sz,120));
 	relu1 = nn::ReLU();
 	fc2 = nn::Linear(nn::LinearOptions(120,84));
 	relu2 = nn::ReLU();
-	fc3 = nn::Linear(nn::LinearOptions(84,nc));
+	fc3 = nn::Linear(nn::LinearOptions(84,nCls));
 	
 	register_module("conv1", conv1);
 	register_module("mPool1", mPool1);

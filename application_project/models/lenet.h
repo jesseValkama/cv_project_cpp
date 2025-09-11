@@ -28,11 +28,16 @@ struct LeNetImpl : torch::nn::Module
 	*	cache: bool to cache a feature map for visualisation
 	*	fm: the cached feature map
 	*/
-
+	
 	ConvBlockParams cb1 = { 1, 6, 5, 1, 0 };
 	ConvBlockParams cb2 = { 6, 16, 5, 1, 0 };
 	MaxPoolParams mp1 = { 2, 2 };
 	MaxPoolParams mp2 = { 2, 2 };
+
+	std::vector<blockTypes> layerParams =
+	{
+		cb1, mp1, cb2, mp2
+	};
 
 	ConvBlock conv1{ nullptr };
 	ConvBlock conv2{ nullptr };
@@ -47,7 +52,7 @@ struct LeNetImpl : torch::nn::Module
 	bool cache = false;
 	torch::Tensor fm;
 
-	LeNetImpl(int nc, int imgsz, bool fmvis = false);
+	LeNetImpl(int nCls, int imgsz, bool fmvis = false);
 	torch::Tensor forward(torch::Tensor x);
 	std::optional<torch::Tensor> get_fm(int fmi = -1);
 	/*

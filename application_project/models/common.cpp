@@ -1,7 +1,11 @@
 #include "common.h"
 
+#include <cstdlib>
 #include <cstddef>
 #include <stdint.h>
+#include <variant>
+#include <vector>
+
 #include <torch/torch.h>
 #include "../settings.h"
 
@@ -30,24 +34,73 @@ torch::Tensor ConvBlockImpl::forward(torch::Tensor x, bool bRelu)
 	return bRelu ? relu->forward(x) : x;
 }
 
-int64_t dynamicFC(int imgsz, ConvBlockParams &cb1, MaxPoolParams &mp1, ConvBlockParams &cb2, MaxPoolParams &mp2)
+int64_t calc_size_reduction(int64_t sz, int64_t ks, int64_t p, int64_t s, int repeat)
 {
-	// computed only once, since the images are expected to be squares
-	// make changes if the layers change!!!
-	int64_t size = 0;
-	size = (imgsz - cb1.ks + 2 * cb1.p) / (cb1.s) + 1;
-	size = (size - mp1.ks) / (mp1.s) + 1;
-	size = (size - cb2.ks + 2 * cb2.p) / (cb2.s) + 1;
-	size = (size - mp2.ks) / (mp2.s) + 1;
-	return size * size * cb2.out;
+	for (int i = 0; i < repeat; ++i)
+	{
+		sz = (sz - ks + 2 * p) / s + 1;
+	}
+	if (sz < 1)
+	{
+		std::cout << "The size of the output is < 1" << std::endl;
+		std::abort();
+	}
+	return sz;
 }
 
-ResidualBlockImpl::ResidualBlockImpl(ResidualBlockParams &p, ConvBlock &downsample)
+int64_t dynamic_fc(std::vector<blockTypes> &layerParams, int imgsz)
+{
+	int64_t sz = imgsz;
+	ConvBlockParams cb;
+	MaxPoolParams mp;
+	AvgPoolParams ap;
+	ResidualBlockParams rb;
+	int64_t nc = 0;
+
+	for (blockTypes &blockParams : layerParams)
+	{
+		ParamType type = static_cast<ParamType>(blockParams.index());
+		switch (type)
+		{
+			case ParamType::ConvBlockType:
+				cb = std::get<ConvBlockParams>(blockParams);
+				sz = calc_size_reduction(sz, cb.ks, cb.p, cb.s);
+				nc = cb.out;
+				break;
+
+			case ParamType::MaxPoolType:
+				mp = std::get<MaxPoolParams>(blockParams);
+				sz = calc_size_reduction(sz, mp.ks, mp.p, mp.s);
+				break;
+					
+			case ParamType::AvgPoolType:
+				ap = std::get<AvgPoolParams>(blockParams);
+				sz = calc_size_reduction(sz, ap.ks, ap.p, ap.s);
+				break;
+
+			case ParamType::ResidualBlockType:
+				rb = std::get<ResidualBlockParams>(blockParams);
+				cb = rb.convBlockParams;
+				sz = calc_size_reduction(sz, cb.ks, cb.p, rb.firstStride.second);
+				sz = calc_size_reduction(sz, cb.ks, cb.p, cb.s);
+				sz = calc_size_reduction(sz, cb.ks, cb.p, cb.s, rb.n - 1);
+				nc = cb.out;
+				break;
+
+			default:
+				std::cout << "Block type not added to dynamic_fc" << std::endl;
+				std::abort();
+		}
+	}
+	return sz * sz * nc;
+}
+
+ResidualBlockImpl::ResidualBlockImpl(ResidualBlockParams &p, ConvBlock downsample)
 {
 	params = p;
 	conv1 = ConvBlock(p.convBlockParams);
 	conv2 = ConvBlock(p.convBlockParams);
-	if (params.ds) { dsBlock = downsample; }
+	dsBlock = downsample;
 	relu = nn::ReLU();
 
 	register_module("conv1", conv1);
@@ -62,7 +115,7 @@ torch::Tensor ResidualBlockImpl::forward(torch::Tensor x)
 	x = conv1->forward(x);
 	x = conv2->forward(x, false);
 	x += res;
-	if (params.ds) 
+	if (dsBlock) 
 	{
 		dsBlock->forward(res);
 	}

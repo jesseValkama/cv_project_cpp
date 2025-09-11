@@ -73,29 +73,29 @@ void MetricsContainer::print_cm()
 	std::cout << "The confusion matrix:\n" << table << std::endl;
 }
 
-MetricsContainer create_mc(uint32_t nc)
+MetricsContainer create_mc(uint32_t nCls)
 {
 	AllCm cm;
-	for (int i = 0; i < nc; ++i)
+	for (int i = 0; i < nCls; ++i)
 	{
 		cm.push_back({ {"tp", 0}, {"fp", 0}, {"fn", 0} });
 	}
-	torch::Tensor table = torch::zeros({nc, nc});
+	torch::Tensor table = torch::zeros({nCls, nCls});
 	return MetricsContainer(cm, table);
 }
 
-void MetricsContainer::calc_metrics(uint32_t nc)
+void MetricsContainer::calc_metrics(uint32_t nCls)
 {
 	float recall = 0.0, precision = 0.0, accuracy = 0.0;
-	for (int i = 0; i < nc; ++i)
+	for (int i = 0; i < nCls; ++i)
 	{
 		recall += (float) cm[i]["tp"] / (float) (cm[i]["tp"] + (float) cm[i]["fn"]);
 		precision += (float) cm[i]["tp"] / (float) (cm[i]["tp"] + (float) cm[i]["fp"]);
 		accuracy += (float) cm[i]["tp"] / (float) (cm[i]["tp"] + (float) cm[i]["fp"] + (float) cm[i]["fn"]);
 	}
-	recall /= (float) nc;
-	precision /= (float) nc;
-	accuracy /= (float) nc;
+	recall /= (float) nCls;
+	precision /= (float) nCls;
+	accuracy /= (float) nCls;
 
 	metrics = { {"recall", recall},{"precision", precision},{"accuracy", accuracy} };
 }

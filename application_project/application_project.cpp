@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 	*/
 	
 	// this is here, because the settings.h takes a while to build
-	int XAI = 10;
+	int XAI = -1;
 
 	std::optional<std::unordered_map<std::string, bool>> args = handle_args(argc, argv);
 	if (!args.has_value()) { return 1; }

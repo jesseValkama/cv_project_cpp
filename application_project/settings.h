@@ -16,14 +16,14 @@ struct MnistOpts
 
 	std::string inferenceDataPath = "D:/datasets/inference_imgs";
 	std::string savepath = "D:/self-studies/application_project/application_project/weights";
-	std::string inferenceModel = "inference"; // you can leave out the formatting like .pth, it is automatically added
+	std::string inferenceModel = "lenet_inference"; // you can leave out the formatting like .pth, it is automatically added
 	int imgsz = 28;
 	int imgresz = 32;
 	size_t trainBS = 128;
 	size_t valBS = 128;
 	size_t testBS = 128;
 	size_t numWorkers = 4;
-	int numOfChannels = 10;
+	int numOfClasses = 10;
 	
 	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
 	float mean = 0.1307;

@@ -3,12 +3,14 @@
 
 #include <torch/torch.h>
 
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "../models/lenet.h"
+#include "../models/model_wrapper.h"
 #include "../settings.h"
 
 int lenet_loop(Settings &opts, bool train, bool test);
@@ -41,7 +43,7 @@ int lenet_train(Dataloader &trainloader, Dataloader &valloader, Settings &opts);
 */
 
 template<typename Dataloader>
-int lenet_val(LeNet &model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
+int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 

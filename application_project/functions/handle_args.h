@@ -2,10 +2,11 @@
 #define HANDLEARGS_H
 
 #include <optional>
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 
-std::optional<std::unordered_map<std::string, bool>> handle_args(int argc, char* argv[]);
+std::optional<std::unordered_map<std::string, int16_t>> handle_args(int argc, char* argv[]);
 /*
 * Function to handle command-line arguments
 * 
@@ -13,12 +14,20 @@ std::optional<std::unordered_map<std::string, bool>> handle_args(int argc, char*
 *	argc: n of args
 *	argv: array for args
 * 
+* Command-line argumetns:
+*	train: 1 || 0
+*	test: 1 || 0
+*	inference: 1 || 0
+*	
+*	xai: -2 skip, -1 gradcam, idx for feature map
+*	model: 0 LeNet, 1 ResNet
+* 
 * Returns:
 *	hashmap: successful
 *	nullopt: failed (logged to terminal)
 */
 
-int handle_flags(std::unordered_map<std::string, bool> &requiredArgs, std::string &key);
+int handle_flags(std::unordered_map<std::string, int16_t> &requiredArgs, std::string &key);
 /*
 * Function to validate input flags
 * 
@@ -31,7 +40,7 @@ int handle_flags(std::unordered_map<std::string, bool> &requiredArgs, std::strin
 *	1: failed (logged to terminal)
 */
 
-int handle_values(std::unordered_map<std::string, bool> &requiredArgs, std::string &key, std::string &v);
+int handle_values(std::unordered_map<std::string, int16_t> &requiredArgs, std::string &key, std::string &v);
 /*
 * Function to validate input values and changes the requiredArgs based on the value
 * 

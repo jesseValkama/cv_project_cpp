@@ -24,8 +24,8 @@ Batch MnistDataset::get(size_t i)
 		std::optional<std::pair<cv::Mat, char>> p = load_mnist_img(fImgs, j, info, mnistOpts.imgsz, mnistOpts.imgsz, mnistOpts.imgresz);
 		if (p.has_value())
 		{
-			torch::Tensor timg = greyscale2Tensor(p.value().first, mnistOpts.imgresz, 255);
-			torch::Tensor tlabel = torch::tensor(p.value().second, torch::kLong);
+			torch::Tensor timg = greyscale2Tensor(p.value().first, mnistOpts.imgresz, 255).pin_memory();
+			torch::Tensor tlabel = torch::tensor(p.value().second, torch::kLong).pin_memory();
 			return {timg, tlabel};
 		}
 	}

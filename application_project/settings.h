@@ -17,13 +17,16 @@ struct MnistOpts
 	std::string inferenceDataPath = "D:/datasets/inference_imgs";
 	std::string savepath = "D:/self-studies/application_project/application_project/weights";
 	std::string inferenceModel = "lenet_inference"; // you can leave out the formatting like .pth, it is automatically added
+	std::string testModel = "lenet_inference";
+	std::string workModel = "working";
 	int imgsz = 28;
-	int imgresz = 32;
-	size_t trainBS = 128;
-	size_t valBS = 128;
-	size_t testBS = 128;
+	int imgresz = 224; // 32 lenet, 224 resnet
+	size_t trainBS = 64; // 128 lenet, 64 resnet
+	size_t valBS = 64;
+	size_t testBS = 64;
 	size_t numWorkers = 4;
-	int numOfClasses = 10;
+	int64_t numOfClasses = 10;
+	int64_t numOfChannels = 1;
 	
 	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
 	float mean = 0.1307;
@@ -34,11 +37,12 @@ struct Settings
 {
 	MnistOpts mnistOpts;
 	torch::Device dev = torch::kCUDA;
-	size_t maxEpochs = 16;
+	size_t minEpochs = 5;
+	size_t maxEpochs = 8;
 	size_t valInterval = 2;
 	float learningRate = 0.005;
 	size_t IntervalsBeforeEarlyStopping = 1; // unnecessary for lenet, but could be useful for a more complex model
-	bool automatedMixedPrecision = false;
+	bool automatedMixedPrecision = false; // NOT IN USE YET
 };
 
 #endif

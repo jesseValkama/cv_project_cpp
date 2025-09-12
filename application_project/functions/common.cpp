@@ -13,9 +13,13 @@
 #include "../datasets/mnist.h"
 #include "../datasets/loader_funcs.h"
 
-bool early_stopping(int mem, bool imp)
+bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp)
 {
-	static int dec = 0;
+	if (epoch <= mem)
+	{
+		return false;
+	}
+	static size_t dec = 0;
 	if (!imp)
 	{
 		std::cout << "The model did not improve" << std::endl;

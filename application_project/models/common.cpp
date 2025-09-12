@@ -18,7 +18,7 @@ ConvBlockImpl::ConvBlockImpl(const ConvBlockParams &p)
 		p.s >= 0 &&
 		p.p >= 0
 	);
-	conv = nn::Conv2d(nn::Conv2dOptions(p.in, p.out, p.ks).stride(p.s).bias(false));
+	conv = nn::Conv2d(nn::Conv2dOptions(p.in, p.out, p.ks).stride(p.s).padding(p.p).bias(false));
 	bn = nn::BatchNorm2d(nn::BatchNorm2dOptions(p.out));
 	relu = nn::ReLU();
 
@@ -80,8 +80,8 @@ int64_t dynamic_fc(std::vector<blockTypes> &layerParams, int imgsz)
 
 			case ParamType::ResidualBlockType:
 				rb = std::get<ResidualBlockParams>(blockParams);
-				cb = rb.convBlockParams;
-				sz = calc_size_reduction(sz, cb.ks, cb.p, rb.firstStride.second);
+				cb = rb.cb;
+				sz = calc_size_reduction(sz, cb.ks, cb.p, rb.firstStride);
 				sz = calc_size_reduction(sz, cb.ks, cb.p, cb.s);
 				sz = calc_size_reduction(sz, cb.ks, cb.p, cb.s, rb.n - 1);
 				nc = cb.out;
@@ -95,17 +95,19 @@ int64_t dynamic_fc(std::vector<blockTypes> &layerParams, int imgsz)
 	return sz * sz * nc;
 }
 
-ResidualBlockImpl::ResidualBlockImpl(ResidualBlockParams &p, ConvBlock downsample)
+ResidualBlockImpl::ResidualBlockImpl(ConvBlockParams &p, int64_t firstStride, ConvBlock downsample)
 {
-	params = p;
-	conv1 = ConvBlock(p.convBlockParams);
-	conv2 = ConvBlock(p.convBlockParams);
+	conv1 = ConvBlock(ConvBlockParams{ p.in, p.out, p.ks, firstStride, p.p });
+	conv2 = ConvBlock(ConvBlockParams{ p.out, p.out, p.ks, p.s, p.p });
 	dsBlock = downsample;
 	relu = nn::ReLU();
 
 	register_module("conv1", conv1);
 	register_module("conv2", conv2);
-	register_module("dsBlock", dsBlock);
+	if (dsBlock)
+	{
+		register_module("dsBlock", dsBlock);
+	}
 	register_module("relu", relu);
 }
 
@@ -114,10 +116,10 @@ torch::Tensor ResidualBlockImpl::forward(torch::Tensor x)
 	torch::Tensor res = x;
 	x = conv1->forward(x);
 	x = conv2->forward(x, false);
-	x += res;
 	if (dsBlock) 
 	{
-		dsBlock->forward(res);
+		res = dsBlock->forward(res, false);
 	}
+	x += res;
 	return relu->forward(x);
 }

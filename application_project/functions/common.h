@@ -14,7 +14,7 @@
 
 namespace nn = torch::nn;
 
-bool early_stopping(int mem, bool imp);
+bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp);
 /*
 	* Returns condition whether to stop training
 	* Logic: if n amout of validations have passed in a row
@@ -22,7 +22,9 @@ bool early_stopping(int mem, bool imp);
 	*		 return true, otherwise false
 	*
 	* Args:
-	*	mem: the amount of validations stored to 
+	*	mem: the amount of validations without improvements in a row before early stopping
+	*	wait: the amount of epochs to wait before activating activating function (at the end there will be 0 failed improvements stored)
+	*	epoch: the current epoch
 	*	imp: whether the model improved last epoch
 	* 
 	* Returns:

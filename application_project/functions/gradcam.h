@@ -4,8 +4,9 @@
 #include <torch/torch.h>
 
 #include <optional>
+#include <stdint.h>
 
-int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg);
+int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg, int64_t label, double prob);
 /*
 * Student's implementation for gradcam
 * Doesn't use hooks to make it simplier (not good for modularity)

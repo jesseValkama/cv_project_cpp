@@ -33,9 +33,8 @@ namespace nn = torch::nn;
 *	https://github.com/pytorch/examples/tree/main/cpp/mnist
 */
 
-int lenet_loop(Settings &opts, bool train, bool test)
+int lenet_loop(Settings &opts, ModelTypes modelType, bool train, bool test)
 {
-	std::cout << ANSI_MAGENTA << "Starting to train lenet" << ANSI_END << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
 	
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
@@ -84,7 +83,7 @@ int lenet_loop(Settings &opts, bool train, bool test)
 	
 	if (train) 
 	{
-		status = lenet_train(*trainloader, *valloader, opts);
+		status = lenet_train(*trainloader, *valloader, opts, modelType);
 		if (status == 1)
 		{
 			return status;
@@ -93,7 +92,7 @@ int lenet_loop(Settings &opts, bool train, bool test)
 	
 	if (test)
 	{
-		status = lenet_test(*testloader, opts);
+		status = lenet_test(*testloader, opts, modelType, train);
 		if (status == 1)
 		{
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
@@ -105,14 +104,14 @@ int lenet_loop(Settings &opts, bool train, bool test)
 }
 
 template<typename Dataloader>
-int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
+int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts, ModelTypes modelType)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
 	
-	std::shared_ptr<ModelWrapper> model = std::make_shared<ModelWrapper>(0, mnistOpts);
-	model->to(opts.dev);
+	std::shared_ptr<ModelWrapper> modelWrapper = std::make_shared<ModelWrapper>(modelType, mnistOpts);
+	modelWrapper->to(opts.dev, true);
 
-	torch::optim::Adam optimiser(model->parameters(), torch::optim::AdamOptions(opts.learningRate));
+	torch::optim::Adam optimiser(modelWrapper->parameters(), torch::optim::AdamOptions(opts.learningRate));
 	torch::nn::CrossEntropyLoss lossFn;
 
 	int ret = 0;
@@ -121,10 +120,11 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 	bool stop = false;
 	size_t dec = 0;
 
+	std::cout << ANSI_MAGENTA << "Starting to train " + modelWrapper->get_name() << ANSI_END << "\n";
 	for (size_t epoch = 1; epoch <= opts.maxEpochs; ++epoch)
 	{	
 		std::cout << ANSI_GREEN << "Epoch: " << epoch << ANSI_END << std::endl;
-		model->train();
+		modelWrapper->train();
 
 		float trainLoss = 0.0;
 		int i = 0;
@@ -135,7 +135,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 			
 			optimiser.zero_grad();
 
-			torch::Tensor outputs = model->forward(imgs);
+			torch::Tensor outputs = modelWrapper->forward(imgs);
 			torch::Tensor loss = lossFn(outputs, labels);
 			if (std::isnan(loss.template item<float>()))
 			{
@@ -156,13 +156,13 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 
 		if (epoch % opts.valInterval == 0)
 		{
-			ret = lenet_val(model, valloader, bestValLoss, lossFn, valImprov, opts);
+			ret = lenet_val(modelWrapper, valloader, bestValLoss, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
 				std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 				return 1;
 			}
-			stop = early_stopping(opts.IntervalsBeforeEarlyStopping, valImprov);
+			stop = early_stopping(opts.IntervalsBeforeEarlyStopping, opts.minEpochs, epoch, valImprov);
 			if (stop)
 			{
 				return 0;
@@ -174,10 +174,10 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts)
 }
 
 template<typename Dataloader>
-int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
-	model->eval();
+	modelWrapper->eval();
 	int i = 0;
 	float valLoss = 0.0;
 	
@@ -187,7 +187,7 @@ int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float 
 		torch::Tensor imgs = batch.data.to(opts.dev);
 		torch::Tensor labels = batch.target.to(opts.dev).view({-1});
 
-		torch::Tensor outputs = model->forward(imgs);
+		torch::Tensor outputs = modelWrapper->forward(imgs);
 		torch::Tensor loss = lossFn(outputs, labels);
 		if (std::isnan(loss.template item<float>()))
 		{
@@ -206,7 +206,7 @@ int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float 
 	imp = false;
 	if (valLoss < bestValLoss)
 	{
-		model->save_model("working.pth");
+		modelWrapper->save_weights(mnistOpts.workModel);
 		bestValLoss = valLoss;
 		imp = true;
 		std::cout << ANSI_YELLOW << "The model improved" << ANSI_END << std::endl;
@@ -216,15 +216,16 @@ int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float 
 }
 
 template<typename Dataloader>
-int lenet_test(Dataloader &testloader, Settings &opts)
+int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, bool train)
 {
-	std::cout << ANSI_MAGENTA << "Starting testing" << ANSI_END << "\n";
 	MnistOpts mnistOpts = opts.mnistOpts;
-	std::unique_ptr<ModelWrapper> model = std::make_unique<ModelWrapper>(0, mnistOpts);
-	model->load_model("working.pth");
+	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts);
+	std::cout << ANSI_MAGENTA << "Starting testing for " << modelWrapper->get_name() << ANSI_END << "\n";
 
-	model->to(opts.dev);
-	model->eval();
+	std::string fModel = train ? mnistOpts.workModel : mnistOpts.testModel;
+	modelWrapper->load_weights(fModel);
+	modelWrapper->to(opts.dev, true);
+	modelWrapper->eval();
 	MetricsContainer mc = create_mc(mnistOpts.numOfClasses);
 
 	torch::NoGradGuard no_grad;
@@ -232,7 +233,7 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 	{
 		torch::Tensor imgs = batch.data.to(opts.dev);
 		torch::Tensor labels = batch.target.to(opts.dev).view({ -1 });
-		torch::Tensor outputs = model->forward(imgs);
+		torch::Tensor outputs = modelWrapper->forward(imgs);
 		calc_cm(labels, outputs, mc);
 	}
 	mc.print_cm();
@@ -240,14 +241,14 @@ int lenet_test(Dataloader &testloader, Settings &opts)
 	mc.print_metrics();
 
 	std::string ans;
-	std::cout << "Would you like to save the model?\nType name.pth to save the model, skip by writing no" << std::endl;
+	std::cout << "Would you like to save the model?\nType name.pth to save the model, skip by not writing in the correct format" << std::endl;
 	std::getline(std::cin, ans);
 
 	std::regex rx(R"(^\w+\.pth$)");
 	if (std::regex_match(ans, rx))
 	{
 		std::cout << "Saving the model" << std::endl;
-		model->save_model(ans);
+		modelWrapper->save_weights(ans);
 	}
 	else
 	{

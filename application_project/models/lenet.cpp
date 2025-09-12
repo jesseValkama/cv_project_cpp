@@ -10,8 +10,9 @@
 #include "common.h"
 #include "../settings.h"
 
-LeNetImpl::LeNetImpl(int nCls, int imgsz, bool fmvis)
+LeNetImpl::LeNetImpl(int imgsz, int64_t nCls, int64_t nc, bool fmvis)
 {
+	cb1.in = nc;
 	cache = fmvis;
 
 	conv1 = ConvBlock(cb1);
@@ -63,7 +64,7 @@ torch::Tensor LeNetImpl::forward(torch::Tensor x)
 	return x;
 }
 
-std::optional<torch::Tensor> LeNetImpl::get_fm(int fmi)
+std::optional<torch::Tensor> LeNetImpl::get_fm(int16_t fmi)
 {
 	if (fmi < -1 || fmi >= fm.size(1)) { std::cout << "Bad fm index" << "\n";  return std::nullopt; }
 	if (!cache) { std::cout << "Init model for fm vis" << "\n"; return std::nullopt; }

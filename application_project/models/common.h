@@ -38,9 +38,9 @@ struct AvgPoolParams
 
 struct ResidualBlockParams
 {
-	ConvBlockParams convBlockParams;
+	ConvBlockParams cb;
 	int64_t n = 0;
-	std::pair<bool, int> firstStride = {false, 2};
+	int64_t firstStride = 0;
 };
 
 // you need to update these if you add more custom blocks
@@ -126,9 +126,8 @@ struct ResidualBlockImpl : torch::nn::Module
 	ConvBlock conv2{ nullptr };
 	ConvBlock dsBlock{ nullptr };
 	nn::ReLU relu{ nullptr };
-	ResidualBlockParams params;
 
-	ResidualBlockImpl(ResidualBlockParams &p, ConvBlock downsample);
+	ResidualBlockImpl(ConvBlockParams &p, int64_t firstStride, ConvBlock downsample = nullptr);
 	torch::Tensor forward(torch::Tensor x);
 };
 

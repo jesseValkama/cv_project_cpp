@@ -1,6 +1,7 @@
 ﻿#include "application_project.h"
 
 #include <optional>
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 
@@ -8,35 +9,37 @@
 #include "functions/handle_args.h"
 #include "functions/inference.h"
 #include "functions/train_lenet.h"
+#include "models/model_wrapper.h"
 
 int main(int argc, char *argv[])
 {
 	/*
 	* todo:
 	*
-	* add idx as a command-line arg (remove form opts)
-	* fix probabilites
-	* add wait to early stopping
 	* complete readme
 	* add unit tests (does googletest even work?)
 	*/
 	
-	// this is here, because the settings.h takes a while to build
-	int XAI = -1;
-
-	std::optional<std::unordered_map<std::string, bool>> args = handle_args(argc, argv);
+	std::optional<std::unordered_map<std::string, int16_t>> args = handle_args(argc, argv);
 	if (!args.has_value()) { return 1; }
 	Settings opts;
 	int ret = 0;
 
-	if (args.value()["train"] || args.value()["test"])
+	// todo: make fn for these with erro handling in handle_args with a tuple
+	bool train = (*args).at("train") == 1 ? true : false;
+	bool test = (*args).at("test") == 1 ? true : false;
+	bool inference = (*args).at("inference") == 1 ? true : false;
+	ModelTypes modelType = static_cast<ModelTypes>((*args).at("model"));
+	int16_t XAI = (*args).at("xai");
+
+	if (train || test)
 	{
-		ret = lenet_loop(opts, args.value()["train"], args.value()["test"]);
+		ret = lenet_loop(opts, modelType, train, test);
 		if (ret != 0) { return ret; }
 	}
-	if (args.value()["inference"])
+	if (inference)
 	{
-		ret = run_inference(opts, XAI);
+		ret = run_inference(opts, modelType, train, XAI);
 		if (ret != 0) { return ret; }
 	}
 	return 0;

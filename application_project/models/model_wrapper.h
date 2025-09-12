@@ -25,37 +25,28 @@ class ModelWrapper
 	private:
 		std::optional<Model> model;
 		MnistOpts mnistOpts;
+		std::string name = "none";
 
-		void create_model(int16_t modelType, MnistOpts mnistOpts, bool fmvis = false);
+		void create_model(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis = false);
 		/*
 		* Method for creating a model, called internally by constructor method
 		*/
 
 	public:
 
-		ModelWrapper(int16_t modelType, MnistOpts mnistOpts, bool fmvis = false);
+		ModelWrapper(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis = false);
 		/*
 		* Construction method, automatically creates the model with create_model
 		*/
-	
-		void save_model(std::string path);
-		/*
-		* Method for saving the model
-		*/
 
-		void load_model(std::string path);
-		/*
-		* Method for loading weights for a model
-		*/
-
+		void save_weights(std::string path);
+		void load_weights(std::string path);
 		void train();
-
 		void eval();
-
-		void to(torch::Device dev);
-
+		void to(torch::Device dev, bool non_blocking = false);
 		std::vector<torch::Tensor> parameters(bool recurse = true);
-
+		std::string get_name();
+		
 		torch::Tensor forward(torch::Tensor);
 		/*
 		* Method for performing the forward pass
@@ -64,7 +55,7 @@ class ModelWrapper
 		*	if the model wasn't created correctly before
 		*/
 
-		std::optional<torch::Tensor> get_fm(int fmi);
+		std::optional<torch::Tensor> get_fm(int16_t fmi);
 		/*
 		* Method for getting the feature map
 		* 
@@ -73,5 +64,19 @@ class ModelWrapper
 		*	nullopt: if tried to call with fmvis = false
 		*/
 };
+
+std::optional<std::string> format_path(std::string path, MnistOpts &mnistOpts);
+/*
+* Automatically adds the .pth extention if it is not present in the path
+* TODO: error handling for paths
+* 
+* Args:
+*	path: the actual path
+*	mnistOpts: the options for the path
+* 
+* Returns:
+*	std::string: the formatted path
+*	nullopt: the path doesn't exist
+*/
 
 #endif

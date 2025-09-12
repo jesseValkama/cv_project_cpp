@@ -5,7 +5,9 @@
 #include <opencv2/imgproc.hpp>
 #include <torch/torch.h>
 
-int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, cv::ColormapTypes type = cv::COLORMAP_JET);
+#include <stdint.h>
+
+int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, double prob, cv::ColormapTypes type = cv::COLORMAP_JET);
 /*
 * Used to visualise a feature map with opencv
 * Requires an existing window with the name of fmvis (which it doesn't destroy)

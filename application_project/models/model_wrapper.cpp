@@ -1,8 +1,10 @@
 #include "model_wrapper.h"
 
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <optional>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -12,23 +14,26 @@
 #include "lenet.h"
 #include "resnet.h"
 
-ModelWrapper::ModelWrapper(int16_t modelType, MnistOpts mnistOpts, bool fmvis)
+namespace fs = std::filesystem;
+
+ModelWrapper::ModelWrapper(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis)
 	: mnistOpts(mnistOpts)
 {
 	create_model(modelType, mnistOpts, fmvis);
 }
 
-void ModelWrapper::create_model(int16_t modelType, MnistOpts mnistOpts, bool fmvis)
+void ModelWrapper::create_model(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis)
 {
-	ModelTypes type = static_cast<ModelTypes>(modelType);
-	switch (type)
+	switch (modelType)
 	{
 		case ModelTypes::LeNetType:
-			model = LeNet(mnistOpts.numOfClasses, mnistOpts.imgresz, fmvis);
+			model = LeNet(mnistOpts.imgresz, mnistOpts.numOfClasses, mnistOpts.numOfChannels, fmvis);
+			name = "LeNet";
 			break;
 
 		case ModelTypes::ResNetType:
-			model = ResNet(mnistOpts.imgresz, mnistOpts.numOfClasses, 1);
+			model = ResNet(mnistOpts.imgresz, mnistOpts.numOfClasses, mnistOpts.numOfChannels, fmvis);
+			name = "ResNet";
 			break;
 
 		default:
@@ -37,18 +42,20 @@ void ModelWrapper::create_model(int16_t modelType, MnistOpts mnistOpts, bool fmv
 	}
 }
 
-void ModelWrapper::save_model(std::string path)
+void ModelWrapper::save_weights(std::string path)
 {
-	// todo error handling
 	if (!model.has_value()) { std::abort(); }
-	std::visit([&](auto &m) { torch::save(m, mnistOpts.savepath + "/" + path); }, model.value());
+	std::optional<std::string> fPath = format_path(mnistOpts.savepath + "/" + path, mnistOpts);
+	if (!fPath.has_value()) { std::abort(); }
+	std::visit([&](auto &m) { torch::save(m, fPath.value()); }, model.value());
 }
 
-void ModelWrapper::load_model(std::string path)
+void ModelWrapper::load_weights(std::string path)
 {
-	// todo error handling
 	if (!model.has_value()) { std::abort(); }
-	std::visit([&](auto &m) { torch::load(m, mnistOpts.savepath + "/" + path); }, model.value());
+	std::optional<std::string> fPath = format_path(mnistOpts.savepath + "/" + path, mnistOpts);
+	if (!fPath.has_value()) { std::abort(); }
+	std::visit([&](auto &m) { torch::load(m, fPath.value()); }, model.value());
 }
 
 void ModelWrapper::train()
@@ -63,10 +70,10 @@ void ModelWrapper::eval()
 	std::visit([&](auto &m) { m->eval(); }, model.value());
 }
 
-void ModelWrapper::to(torch::Device dev)
+void ModelWrapper::to(torch::Device dev, bool non_blocking)
 {
 	if (!model.has_value()) { std::abort(); }
-	std::visit([&](auto &m) { m->to(dev); }, model.value());
+	std::visit([&](auto &m) { m->to(dev, non_blocking); }, model.value());
 }
 
 std::vector<torch::Tensor> ModelWrapper::parameters(bool recurse)
@@ -75,14 +82,31 @@ std::vector<torch::Tensor> ModelWrapper::parameters(bool recurse)
 	return std::visit([&](auto &m) { return m->parameters(recurse); }, model.value());
 }
 
+std::string ModelWrapper::get_name()
+{
+	return name;
+}
+
 torch::Tensor ModelWrapper::forward(torch::Tensor x)
 {
 	if (!model.has_value()) { std::abort(); }
 	return std::visit([&](auto &m) { return m->forward(x); }, model.value());
 }
 
-std::optional<torch::Tensor> ModelWrapper::get_fm(int fmi)
+std::optional<torch::Tensor> ModelWrapper::get_fm(int16_t fmi)
 {
 	if (!model.has_value()) { std::abort(); }
 	return std::visit([&](auto &m) { return m->get_fm(fmi); }, model.value());
+}
+
+std::optional<std::string> format_path(std::string path, MnistOpts &mnistOpts)
+{
+	//todo: error handling
+	std::regex rx(R"(^.+\.pth$)");
+	if (std::regex_match(path, rx))
+	{
+		return path;
+	}
+	
+	return path + ".pth";
 }

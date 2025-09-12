@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -20,12 +21,7 @@
 
 namespace fs = std::filesystem;
 
-/*
-* credit for the file iterator:
-* https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c 
-*/
-
-int run_inference(Settings &opts, int idx)
+int run_inference(Settings &opts, ModelTypes modelType, bool train, int16_t XAI)
 {
 	MnistOpts mnistOpts = opts.mnistOpts;
 	std::vector<std::string> fImgs;
@@ -34,26 +30,27 @@ int run_inference(Settings &opts, int idx)
 		fImgs.emplace_back(entry.path().string());
 	}
 	int ret = 0;
-	ret = lenet_inference(fImgs, opts, idx);
+	ret = lenet_inference(fImgs, opts, modelType, train, XAI);
 	if (ret != 0) { return ret; }
 	return 0;
 }
 
-int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, int idx)
+int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes modelType, bool train, int16_t XAI)
 {
-	std::cout << "Starting inference" << std::endl;
-	
 	MnistOpts mnistOpts = opts.mnistOpts;
-	std::unique_ptr<ModelWrapper> model = std::make_unique<ModelWrapper>(0, mnistOpts, true);
-	std::string fModel = mnistOpts.savepath + "/" + mnistOpts.inferenceModel + ".pth";
-	model->load_model(mnistOpts.inferenceModel + ".pth");
-	model->to(opts.dev);
-	model->eval();
-	int64_t p = 0, l = 0;
+	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts, true);
+	std::string fModel = train ? mnistOpts.workModel : mnistOpts.inferenceModel;
+	modelWrapper->load_weights(fModel);
+	modelWrapper->to(opts.dev, true);
+	modelWrapper->eval();
+	int64_t l = 0;
+	double p = 0.0;
 	int ret = 0;
 	
 	cv::namedWindow("fmvis", cv::WINDOW_AUTOSIZE);
 	int n = fImgs.size();
+
+	std::cout << "Starting inference for " + modelWrapper->get_name() << std::endl;
 	//torch::NoGradGuard no_grad;
 	for (int i = 0; i < n; ++i)
 	{
@@ -62,7 +59,8 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, int idx)
 		torch::Tensor timg = greyscale2Tensor(img.value(), mnistOpts.imgresz);
 		timg = timg.to(opts.dev).unsqueeze_(0);
 
-		torch::Tensor logits = model->forward(timg);
+		torch::Tensor logits = modelWrapper->forward(timg);
+		logits = logits.to(torch::kFloat64);
 		torch::Tensor preds = torch::softmax(logits, 1);
 		preds = preds.to(torch::kFloat);
 
@@ -73,22 +71,22 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, int idx)
 		prob = prob.to(torch::kCPU, torch::kFloat);
 
 		l = xi.item<int64_t>();
-		p = prob.item<float>(); // todo: fix the probabilities, this makes no sense
+		p = prob.item<double>();
 		std::cout << std::fixed << std::setprecision(6) << "The output is: " << l << ", with the probability of: " << p << std::endl;
 		
-		if (idx == -2) { continue; }
+		if (XAI == -2) { continue; }
 
-		std::optional<torch::Tensor> tfm = model->get_fm(idx);
+		std::optional<torch::Tensor> tfm = modelWrapper->get_fm(XAI);
 		if (!tfm.has_value()) { return 2; }
 
-		if (idx == -1)
+		if (XAI == -1)
 		{
-			ret = gradcam(logits[0][xi], tfm.value(), timg);
+			ret = gradcam(logits[0][xi], tfm.value(), timg, l, p);
 			if (ret != 0) { return ret; }
 		}
 		else
 		{
-			ret = visualise_fm(tfm.value().squeeze_(0), timg, cv::COLORMAP_DEEPGREEN);
+			ret = visualise_fm(tfm.value().squeeze_(0), timg, l, p, cv::COLORMAP_DEEPGREEN);
 			if (ret != 0) { return ret; }
 		}
 	}

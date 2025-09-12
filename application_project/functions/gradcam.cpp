@@ -6,10 +6,11 @@
 
 #include <iostream>
 #include <optional>
+#include <stdint.h>
 
 #include "visualise.h"
 
-int gradcam(torch::Tensor y, torch::Tensor &fmAct, torch::Tensor &inputImg)
+int gradcam(torch::Tensor y, torch::Tensor &fmAct, torch::Tensor &inputImg, int64_t label, double prob)
 {
 	y.backward({}, true); // unoptimised, backpropagates the entire model, not til the hook
 	torch::Tensor alpha = fmAct.grad().mean({ 2, 3 });
@@ -20,7 +21,7 @@ int gradcam(torch::Tensor y, torch::Tensor &fmAct, torch::Tensor &inputImg)
 	torch::Tensor localMaps = (alpha * fmAct).sum(0);
 	localMaps = torch::relu(localMaps);
 
-	int ret = visualise_fm(localMaps, inputImg, cv::COLORMAP_JET);
+	int ret = visualise_fm(localMaps, inputImg, label, prob, cv::COLORMAP_JET);
 	if (ret != 0) { return ret; }
 	
 	return 0;

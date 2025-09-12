@@ -13,7 +13,7 @@
 #include "../models/model_wrapper.h"
 #include "../settings.h"
 
-int lenet_loop(Settings &opts, bool train, bool test);
+int lenet_loop(Settings &opts, ModelTypes modelType, bool train = false, bool test = false);
 /*
 	* This is the main training loop
 	* 
@@ -28,7 +28,7 @@ int lenet_loop(Settings &opts, bool train, bool test);
 */
 
 template<typename Dataloader>
-int lenet_train(Dataloader &trainloader, Dataloader &valloader, Settings &opts);
+int lenet_train(Dataloader &trainloader, Dataloader &valloader, Settings &opts, ModelTypes modelType);
 /*
 	* The function to train LeNet
 	* 
@@ -61,13 +61,15 @@ int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float 
 */
 
 template<typename Dataloader>
-int lenet_test(Dataloader &testloader, Settings &opts);
+int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, bool train);
 /*
 	* The function to test LeNet, currently only tests the model from the last training
 	* 
 	* Args:
 	*	testloader: dataloader for testing
 	*	opts: settings for testing
+	*	modelType: which model
+	*	train: which model to test (trained or defined)
 	* 
 	* Returns:
 	*	0: successful

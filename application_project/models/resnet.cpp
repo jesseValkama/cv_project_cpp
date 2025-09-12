@@ -19,10 +19,10 @@ ResNetImpl::ResNetImpl(int imgsz, int64_t nCls, int64_t nc, bool fmvis)
 
 	conv = ConvBlock(cb);
 	maxPool = nn::MaxPool2d(nn::MaxPool2dOptions(mp.ks).stride(mp.s));
-	layer1 = nn::Sequential();
-	layer2 = nn::Sequential();
-	layer3 = nn::Sequential();
-	layer4 = nn::Sequential();
+	layer1 = make_layer(rb1);
+	layer2 = make_layer(rb2);
+	layer3 = make_layer(rb3);
+	layer4 = make_layer(rb4);
 	avgPool = nn::AvgPool2d(nn::AvgPool2dOptions(ap.ks).stride(ap.s));
 
 	int64_t sz = dynamic_fc(layerParams, imgsz);
@@ -40,22 +40,23 @@ ResNetImpl::ResNetImpl(int imgsz, int64_t nCls, int64_t nc, bool fmvis)
 	register_module("fc", fc);
 }
 
-nn::Sequential ResNetImpl::make_layer(nn::Sequential layers, ResidualBlockParams &resParams, ConvBlockParams &convParams)
+nn::Sequential ResNetImpl::make_layer(ResidualBlockParams &resParams)
 {
-	if (resParams.convBlockParams.s != 1 || cachedDepth != resParams.convBlockParams.out)
+	dsBlock = nullptr;
+	if (resParams.firstStride != 1 || resParams.cb.in != resParams.cb.out)
 	{
-		dsBlock = ConvBlock(convParams);
-		resParams.firstStride.first = true;
-		layers->push_back(ResidualBlock(resParams, dsBlock));
-		resParams.firstStride.first = false;
-		dsBlock = nullptr;
+		ConvBlockParams tmp = { resParams.cb.in, resParams.cb.out, resParams.cb.ks, resParams.firstStride, resParams.cb.p };
+		dsBlock = ConvBlock(tmp);
 	}
+	nn::Sequential layer = nn::Sequential();
+	layer->push_back(ResidualBlock(resParams.cb, resParams.firstStride, dsBlock));
 	
 	for (int i = 1; i < resParams.n; ++i)
 	{
-		layers->push_back(ResidualBlock(resParams, dsBlock));
+		ConvBlockParams tmp = {resParams.cb.out, resParams.cb.out, resParams.cb.ks, resParams.cb.s, resParams.cb.p};
+		layer->push_back(ResidualBlock(tmp, resParams.cb.s));
 	}
-	return layers;
+	return layer;
 }
 
 torch::Tensor ResNetImpl::forward(torch::Tensor x)
@@ -79,7 +80,7 @@ torch::Tensor ResNetImpl::forward(torch::Tensor x)
 	return x;
 }
 
-std::optional<torch::Tensor> ResNetImpl::get_fm(int fmi)
+std::optional<torch::Tensor> ResNetImpl::get_fm(int16_t fmi)
 {
 	if (fmi < -1 || fmi >= fm.size(1)) { std::cout << "Bad fm index" << "\n";  return std::nullopt; }
 	if (!cache) { std::cout << "Init model for fm vis" << "\n"; return std::nullopt; }

@@ -27,13 +27,9 @@ cmake_install.cmake
 
 # Weights
 /application_project/weights/working.pth
+/application_project/weights/lenet_inference.pth
+/application_project/weights/resnet18_inference.pth
 
 # OS junk
 .DS_Store
 Thumbs.db
-
-# too much in progress
-#/application_project/functions/visualise.h
-#/application_project/functions/visualise.cpp
-#/application_project/functions/gradcam.h
-#/application_project/functions/gradcam.cpp

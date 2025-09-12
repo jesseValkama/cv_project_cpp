@@ -37,7 +37,8 @@ struct LeNetImpl : torch::nn::Module
 	*	fm: the cached feature map
 	*/
 	
-	ConvBlockParams cb1 = { 1, 6, 5, 1, 0 };
+	//cb1 in is changed in the constuction method
+	ConvBlockParams cb1 = { 0, 6, 5, 1, 0 };
 	ConvBlockParams cb2 = { 6, 16, 5, 1, 0 };
 	MaxPoolParams mp1 = { 2, 2 };
 	MaxPoolParams mp2 = { 2, 2 };
@@ -60,9 +61,9 @@ struct LeNetImpl : torch::nn::Module
 	bool cache = false;
 	torch::Tensor fm;
 
-	LeNetImpl(int nCls, int imgsz, bool fmvis = false);
+	LeNetImpl(int imgsz, int64_t nCls = 10, int64_t nc = 1, bool fmvis = false);
 	torch::Tensor forward(torch::Tensor x);
-	std::optional<torch::Tensor> get_fm(int fmi = -1);
+	std::optional<torch::Tensor> get_fm(int16_t fmi = -1);
 	/*
 	* Getter function for the cached featuremap
 	* returns either all feature maps or a specific one

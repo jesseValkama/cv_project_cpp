@@ -13,6 +13,11 @@
 #include "../models/model_wrapper.h"
 #include "../settings.h"
 
+/*
+* Inspiration:
+*	https://github.com/pytorch/examples/tree/main/cpp/mnist
+*/
+
 int lenet_loop(Settings &opts, ModelTypes modelType, bool train = false, bool test = false);
 /*
 	* This is the main training loop

@@ -1,11 +1,12 @@
-#ifndef MNISTDATASET_H
-#define MNISTDATASET_H
+#ifndef CIFAR10DATASET_H
+#define CIFAR10DATASET_H
 
 #include <torch/torch.h>
 
 #include "loader_funcs.h"
+#include "../settings.h"
 
-class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
+class Cifar10Dataset : public torch::data::datasets::Dataset<Cifar10Dataset>
 {
 	/*
 	* Custom dataset for mnist
@@ -21,12 +22,12 @@ class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 	*/
 
 	const Info info;
-	const DatasetOpts mnistOpts;
+	const DatasetOpts cifar10Opts;
 	const std::string type;
 
 	public:
-		MnistDataset(const Info& info, const DatasetOpts& mnistOpts, const std::string type) 
-			: info(info), mnistOpts(mnistOpts), type(type) {}
+		Cifar10Dataset(const Info &info, const DatasetOpts &cifar10Opts, const std::string type)
+			: info(info), cifar10Opts(cifar10Opts), type(type) {}
 				
 		Batch get(size_t i);
 		/*

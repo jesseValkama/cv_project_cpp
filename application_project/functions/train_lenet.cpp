@@ -28,14 +28,9 @@ constexpr const char *ANSI_YELLOW = "\033[33m";
 
 namespace nn = torch::nn;
 
-/*
-* Inspiration:
-*	https://github.com/pytorch/examples/tree/main/cpp/mnist
-*/
-
 int lenet_loop(Settings &opts, ModelTypes modelType, bool train, bool test)
 {
-	MnistOpts mnistOpts = opts.mnistOpts;
+	DatasetOpts mnistOpts = opts.mnistOpts;
 	
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
 	Info trainValInfo, testInfo;
@@ -55,15 +50,15 @@ int lenet_loop(Settings &opts, ModelTypes modelType, bool train, bool test)
 	auto [trainInfo, valInfo] = split_train_val_info(trainValInfo, 0.85);
 	auto trainset = MnistDataset(trainInfo, mnistOpts, "train")
 		.map(torch::data::transforms::Normalize<>(
-			{mnistOpts.mean}, {mnistOpts.stdev}))
+			mnistOpts.mean, mnistOpts.stdev))
 		.map(torch::data::transforms::Stack<>());
 	auto valset = MnistDataset(valInfo, mnistOpts, "val")
 		.map(torch::data::transforms::Normalize<>(
-			{mnistOpts.mean}, {mnistOpts.stdev}))
+			mnistOpts.mean, mnistOpts.stdev))
 		.map(torch::data::transforms::Stack<>());
 	auto testset = MnistDataset(testInfo, mnistOpts, "test")
 		.map(torch::data::transforms::Normalize<>(
-			{mnistOpts.mean}, {mnistOpts.stdev}))
+			mnistOpts.mean, mnistOpts.stdev))
 		.map(torch::data::transforms::Stack<>());
 	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 		(
@@ -106,7 +101,7 @@ int lenet_loop(Settings &opts, ModelTypes modelType, bool train, bool test)
 template<typename Dataloader>
 int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts, ModelTypes modelType)
 {
-	MnistOpts mnistOpts = opts.mnistOpts;
+	DatasetOpts mnistOpts = opts.mnistOpts;
 	
 	std::shared_ptr<ModelWrapper> modelWrapper = std::make_shared<ModelWrapper>(modelType, mnistOpts);
 	modelWrapper->to(opts.dev, true);
@@ -130,10 +125,10 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts, 
 		int i = 0;
 		for (Batch &batch : trainloader)
 		{
-			torch::Tensor imgs = batch.data.to(opts.dev);
-			torch::Tensor labels = batch.target.to(opts.dev).view({ -1 });
-			
 			optimiser.zero_grad();
+
+			torch::Tensor imgs = batch.data.to(opts.dev, true);
+			torch::Tensor labels = batch.target.to(opts.dev, true).view({ -1 });
 
 			torch::Tensor outputs = modelWrapper->forward(imgs);
 			torch::Tensor loss = lossFn(outputs, labels);
@@ -176,7 +171,7 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts, 
 template<typename Dataloader>
 int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
-	MnistOpts mnistOpts = opts.mnistOpts;
+	DatasetOpts mnistOpts = opts.mnistOpts;
 	modelWrapper->eval();
 	int i = 0;
 	float valLoss = 0.0;
@@ -184,8 +179,8 @@ int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Dataloader &valloader,
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : valloader)
 	{
-		torch::Tensor imgs = batch.data.to(opts.dev);
-		torch::Tensor labels = batch.target.to(opts.dev).view({-1});
+		torch::Tensor imgs = batch.data.to(opts.dev, true);
+		torch::Tensor labels = batch.target.to(opts.dev, true).view({-1});
 
 		torch::Tensor outputs = modelWrapper->forward(imgs);
 		torch::Tensor loss = lossFn(outputs, labels);
@@ -218,7 +213,7 @@ int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Dataloader &valloader,
 template<typename Dataloader>
 int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, bool train)
 {
-	MnistOpts mnistOpts = opts.mnistOpts;
+	DatasetOpts mnistOpts = opts.mnistOpts;
 	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts);
 	std::cout << ANSI_MAGENTA << "Starting testing for " << modelWrapper->get_name() << ANSI_END << "\n";
 
@@ -231,8 +226,8 @@ int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, boo
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : testloader)
 	{
-		torch::Tensor imgs = batch.data.to(opts.dev);
-		torch::Tensor labels = batch.target.to(opts.dev).view({ -1 });
+		torch::Tensor imgs = batch.data.to(opts.dev, true);
+		torch::Tensor labels = batch.target.to(opts.dev, true).view({ -1 });
 		torch::Tensor outputs = modelWrapper->forward(imgs);
 		calc_cm(labels, outputs, mc);
 	}

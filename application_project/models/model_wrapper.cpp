@@ -16,13 +16,13 @@
 
 namespace fs = std::filesystem;
 
-ModelWrapper::ModelWrapper(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis)
+ModelWrapper::ModelWrapper(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis)
 	: mnistOpts(mnistOpts)
 {
 	create_model(modelType, mnistOpts, fmvis);
 }
 
-void ModelWrapper::create_model(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis)
+void ModelWrapper::create_model(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis)
 {
 	switch (modelType)
 	{
@@ -99,7 +99,7 @@ std::optional<torch::Tensor> ModelWrapper::get_fm(int16_t fmi)
 	return std::visit([&](auto &m) { return m->get_fm(fmi); }, model.value());
 }
 
-std::optional<std::string> format_path(std::string path, MnistOpts &mnistOpts)
+std::optional<std::string> format_path(std::string path, DatasetOpts &mnistOpts)
 {
 	//todo: error handling
 	std::regex rx(R"(^.+\.pth$)");

@@ -11,7 +11,7 @@
 
 std::optional<std::unordered_map<std::string, int16_t>> handle_args(int argc, char *argv[])
 {
-	std::unordered_map<std::string, int16_t> requiredArgs = { {"train", 0}, {"test", 0}, {"inference", 0}, {"xai", 0}, {"model", 0} };
+	std::unordered_map<std::string, int16_t> requiredArgs = { {"train", 0}, {"test", 0}, {"inference", 0}, {"xai", 0}, {"model", 0}, {"dataset", 0} };
 	if (requiredArgs.size() * 2 != argc - 1)
 	{
 		std::cout << "Incorrect n of command-line arguments" << std::endl;

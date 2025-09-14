@@ -10,9 +10,9 @@
 
 int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, double prob, cv::ColormapTypes type)
 {
-	std::optional<cv::Mat> fm = Tensor2greyscale(tfm, false, std::make_pair(-1.0, -1.0)); // double check this
+	std::optional<cv::Mat> fm = Tensor2greyscale(tfm);
 	if (!fm.has_value()) { return 1; }
-	std::optional<cv::Mat> inputImg = Tensor2greyscale(tInputImg, true);
+	std::optional<cv::Mat> inputImg = Tensor2mat(tInputImg, 0);
 	if (!inputImg.has_value()) { return 1; }
 	cv::cvtColor(inputImg.value(), inputImg.value(), cv::COLOR_GRAY2BGR);
 	

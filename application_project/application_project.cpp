@@ -15,22 +15,31 @@ int main(int argc, char *argv[])
 {
 	/*
 	* todo:
-	*
+	* 
+	* IMPLEMENT AMP!!
+	* implement z-scaling for inference
+	* implement transfer optimisatoins for (models?)
+	* 
+	* delete greyscale2Tensor
+	* optimise Tensor2greyscale
+	* 
 	* complete readme
 	* add unit tests (does googletest even work?)
 	*/
 	
 	std::optional<std::unordered_map<std::string, int16_t>> args = handle_args(argc, argv);
 	if (!args.has_value()) { return 1; }
-	Settings opts;
-	int ret = 0;
-
+	
 	// todo: make fn for these with erro handling in handle_args with a tuple
 	bool train = (*args).at("train") == 1 ? true : false;
 	bool test = (*args).at("test") == 1 ? true : false;
 	bool inference = (*args).at("inference") == 1 ? true : false;
 	ModelTypes modelType = static_cast<ModelTypes>((*args).at("model"));
 	int16_t XAI = (*args).at("xai");
+	DatasetTypes datasetType = static_cast<DatasetTypes>((*args).at("dataset"));
+
+	Settings opts(datasetType);
+	int ret = 0;
 
 	if (train || test)
 	{

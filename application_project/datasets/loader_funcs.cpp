@@ -9,6 +9,7 @@
 #include <optional>
 #include <stdint.h>
 #include <string>
+#include <tuple>
 #include <vector>
 
 uint32_t swap_endian(uint32_t val)
@@ -107,7 +108,7 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t &rows,
 	return 0;
 }
 
-int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
+int load_mnist_info(DatasetOpts &opts, Info &o, std::string type)
 {
 	assert(type == "train" || type == "test");
 	std::string fImgs = (type == "train") ? opts.fTrainImgs : opts.fTestImgs;
@@ -155,7 +156,7 @@ int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 		}
 
 		pos = fimg.tellg();
-		if (pos == std::streampos(-1)) // should be correct, geeksforgeeks is not great
+		if (pos == std::streampos(-1))
 		{
 			std::cout << "Failed to read the stream" << std::endl;
 			return 1;
@@ -174,7 +175,64 @@ int load_mnist_info(MnistOpts &opts, Info &o, std::string type)
 	return 0;
 }
 
-std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols, int imgresz)
+int load_cifar10_batch_info(std::ifstream &stream, Info &o, uint32_t bs, uint32_t imgsz, uint32_t labelsz)
+{
+	char label;
+	std::streampos pos = 0;
+
+	for (uint32_t i = 0; i < bs; ++i)
+	{
+		stream.read(&label, labelsz);
+		if (!stream)
+		{
+			std::cout << "Failed to read the stream" << std::endl;
+			return 1;
+		}
+		pos = stream.tellg();
+		if (pos == std::streampos(-1))
+		{
+			std::cout << "Failed to read the stream" << std::endl;
+			return 1;
+		}
+
+		o.emplace_back(pos, label);
+		pos += imgsz;;
+		stream.seekg(pos, std::ios::beg);
+		if (!stream)
+		{
+			std::cout << "Failed to move in the stream" << std::endl;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int load_cifar10_info(DatasetOpts &opts, Info &o, std::string type, uint32_t bs)
+{
+	/*
+	* Think space
+	* 
+	* saving each path would take too much ram
+	* -> Calculating path
+	* 
+	* switch case (dynamically calculating too slow)
+	*	-> cache strings
+	* int batch_idx = static_cast<int>(idx + 1000);
+	*/
+	
+	int ret = 0;
+	std::vector<std::string> fBatch = (type == "train") ? opts.fTrain : opts.fTest;
+	o.reserve(fBatch.size() * bs);
+	for (std::string &fBatch : fBatch)
+	{
+		std::ifstream s(fBatch, std::ios::in | std::ios::binary);
+		ret = load_cifar10_batch_info(s, o, bs);
+		if (ret != 0) { return ret; }
+	}
+	return 0;
+}
+
+std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols, int imgresz, uint32_t depth)
 {
 	std::ifstream fimg(path, std::ios::in | std::ios::binary);
 	if (!fimg.is_open())
@@ -183,7 +241,7 @@ std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t 
 		return std::nullopt;
 	}
 
-	uint32_t imgsz = rows * cols;
+	uint32_t imgsz = rows * cols * depth;
 	std::streampos pos = d[i].first;
 	char l = d[i].second;
 	std::vector<char> buf(imgsz);
@@ -245,18 +303,44 @@ torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div)
 	return timg;
 }
 
-std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg, bool squeeze, std::pair<float, float> scale)
+torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div)
 {
-	torch::Tensor dbg = timg.detach().cpu();
-	if (squeeze) { dbg.squeeze_(); }
-
-	if (scale.first != -1.0 && scale.second != -1.0)
+	torch::Tensor timg = torch::from_blob(
+		img.data,
+		{ imgsz, imgsz, nc},
+		torch::kUInt8
+	).to(torch::kFloat);
+	timg = timg.permute({ 2, 0, 1 });
+	if (div != -1)
 	{
-		dbg = dbg.mul(scale.first).add(scale.second).mul(255).clamp(0,255);
+		return timg.div_(div);
 	}
-	dbg = dbg.to(torch::kUInt8);
+	return timg;
+}
 
-	cv::Mat img(dbg.size(0), dbg.size(1), CV_8UC1, dbg.data_ptr());
+std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg)
+{
+	timg = timg.detach().cpu().to(torch::kUInt8);
+	cv::Mat img(timg.size(0), timg.size(1), CV_8UC1, timg.data_ptr());
+	if (img.empty()) { return std::nullopt; }
+	return img.clone();
+}
+
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, std::pair<std::vector<double>, std::vector<double>> scale)
+{
+	timg = timg.detach().cpu();
+	if (squeeze != -1) { timg.squeeze_(squeeze); }
+	if (!scale.first.empty() && !scale.second.empty())
+	{
+		torch::Tensor tmean = torch::tensor(scale.first).view({ -1, 1, 1 });
+		torch::Tensor tstdev = torch::tensor(scale.second).view({ -1, 1, 1 });
+		timg.mul_(tstdev).add_(tmean);
+	}
+	timg.mul_(255).clamp_(0, 255);
+	timg = timg.to(torch::kUInt8);
+	
+	timg.squeeze_(0); // tmp
+	cv::Mat img(timg.size(0), timg.size(1), CV_8UC1, timg.data_ptr());
 	if (img.empty()) { return std::nullopt; }
 
 	return img.clone();

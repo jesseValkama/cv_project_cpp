@@ -23,7 +23,8 @@ typedef torch::data::Example<> Batch;
 
 uint32_t swap_endian(uint32_t val);
 /*
-* Helper function to decode information
+* Swaps the endian either from big->little or little->big (for 32bit)
+* The mnist dataset is big-endian, this fn changes it to be little endian
 * Credit: https://stackoverflow.com/questions/12993941/how-can-i-read-the-mnist-dataset-with-c
 * 
 * Args:
@@ -31,7 +32,6 @@ uint32_t swap_endian(uint32_t val);
 * 
 * Returns:
 *	the decoded value
-* 
 */
 
 int check_magic(std::ifstream& fimg, std::ifstream& flabel, uint32_t labelMagic, uint32_t imgMagic, int len);
@@ -87,7 +87,7 @@ int check_imgs(std::ifstream& fimg, std::ifstream& flabel, uint32_t& rows,
 *	1: failed (logged to terminal)
 */
 
-int load_mnist_info(MnistOpts& opts, Info& o, std::string type);
+int load_mnist_info(DatasetOpts& opts, Info& o, std::string type);
 /*
 * Naive function to read mnist info
 * Expects the img size to ALWAYS be 28x28
@@ -102,7 +102,40 @@ int load_mnist_info(MnistOpts& opts, Info& o, std::string type);
 * 
 * Returns:
 *	0: successful
-*	1: failed
+*	1: failed (logged to terminal)
+*/
+
+int load_cifar10_batch_info(std::ifstream &stream, Info &o, uint32_t n, uint32_t imgsz = 3072, uint32_t labelsz = 1);
+/*
+* Naive function to read cifar10 data
+* Instructions for loading data:
+*	https://www.cs.toronto.edu/%7Ekriz/cifar.html
+* 
+* Args:
+*	stream: the open stream for a batch
+*	o: the vector to load the indfo to
+*	bs: the amount of label, img pairs in the batch
+*	imgsz: image size (w*h*d) in bytes
+*	labelsz: label size in bytes
+* 
+* Returns:
+*	0: succesful
+*	1: failed (logged to terminal)
+*/
+
+int load_cifar10_info(DatasetOpts &opts, Info &o, std::string type, uint32_t bs = 1000);
+/*
+* Function to combine cifar-10 data (by default train is divided into 5 batches)
+* 
+* Args:
+*	opts: options for cifar-10
+*	o: the vector to read all the defined batches to (defined in settings.h)
+*	type: bool whether "train" or "test"
+*	bs: the amount of label, img pairs in a batch
+* 
+* Returns:
+*	0: succesful
+*	1: failed (logged to terminal)
 */
 
 std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz = -1);
@@ -118,9 +151,9 @@ std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz = -1
 *	nullopt: failed (logged to terminal)
 */
 
-std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1);
+std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1, uint32_t depth = 1);
 /*
-* Naive function to load mnist img
+* Naive function to load mnist img and label
 * Requires info from load_mnist_info
 * 
 * Args:
@@ -138,7 +171,7 @@ std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t 
 
 torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div = -1);
 /*
-* Loads a greyscale cv::Mat into a Tensor (and normalises it, but doesn't include z scaling)
+* Loads a greyscale cv::Mat into a Tensor (normalises it by dividing with div, -1 to skip, but doesn't include z scaling)
 * 
 * Args:
 *	img: the input img
@@ -149,15 +182,40 @@ torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div = -1);
 *	tensor: the output img
 */
 
-std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg, bool squeeze = false, std::pair<float, float> scale = { 0.1307, 0.3081 });
+torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1);
 /*
-* Loads a greyscale tensor to a cv::Mat.
+* Loads a cv::Mat into a Tensor (normalises it by dividing with div, -1 to skip, but doesn't include z scaling)
+*
+* Args:
+*	img: the input img
+*	imgsz: the size of the img
+*	div: max value for img (usually 255) for normalisation (-1 to skip normalisation)
+* 
+* Returns:
+*	Tensor: the output img
+*/
+
+std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg);
+/*
+* fn used for fm vis
+* 
+* Args:
+*	timg: fm as a Tensor
+* 
+* Returns:
+*	cv::Mat: successful
+*	nullopt: failed (logged to terminal)
+*/
+
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, std::pair<std::vector<double>, std::vector<double>> scale = { {0.1307}, {0.3081} });
+/*
+* Loads a tensor to a cv::Mat.
 * Denormalisation is also possible, default z-scaling values are for mnist,
 * and use -1 on both to skip
 * 
 * Args:
 *	timg: img as a tensor
-*	squeeze: bool to squeeze (remove leftover from batch)
+*	squeeze: the index to squeeze from -1 to skip 
 *	scale: 1st mean and 2nd standard deviation for z-scaling
 * 
 * Returns:

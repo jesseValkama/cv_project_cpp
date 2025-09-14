@@ -7,7 +7,7 @@ A simple LeNet MNIST classification project with cpp (to "prove" my cpp skills).
 This project includes a custom training loop for lenet. The testing includes metrics
 such as recall, precision and accuracy with a confusion matrix. In addition, the
 inference supports png images (I made mine in paint). Inference also supports
-feature map visualisations either by index or gradcam (idx -1).
+feature map visualisations either by index or gradcam.
 
 ## Getting Started
 
@@ -24,6 +24,7 @@ but no alternatives are tested.
 * ninja (1.12.1) (recommended)
 * cmake (3.31.6) (required)
 * mnist dataset (if you want to train a model by yourself, i donwloaded mine from kaggle)
+* cifar10 dataset (same as before but from https://www.cs.toronto.edu/%7Ekriz/cifar.html)
 * Image Watch for Visual Studio 2022 (you can visualise imgs when debugging)
 
 * cuda 12.6 (could work without if using cpu)
@@ -54,9 +55,18 @@ cmake -S <src> . -B <out/build> -G Ninja -B -DCMAKE_CXX_COMPILER=cl --config Deb
 cmake --build <build> J <nThreads>
 ```
 ```
-./application_project train x test x inference x
+./application_project train x test x inference x xai x model x
 ```
-where x is either 0 or 1.
+train: 0 || 1
+
+test: 0 || 1
+
+inference: 0 || 1
+
+xai: -2 (skip), -1 (gradcam), 0-n feature map index
+
+model: 0 (LeNet), 1 (ResNet)
+
 
 ## Help
 
@@ -73,6 +83,7 @@ Jesse Valkama
 
 Credits to the following links, since they were helpful. Other more acknowledgements like small code snippets
 from stackoverflow can be found in the .h files.
+* [Cifar10 dataset](https://www.cs.toronto.edu/%7Ekriz/learning-features-2009-TR.pdf)
 * [Mnist dataset](https://www.kaggle.com/datasets/hojjatk/mnist-dataset)
 * [Libtorch tutorial code snippets](https://github.com/pytorch/examples/tree/main/cpp)
 * [Tutorial videos for cpp](https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb)

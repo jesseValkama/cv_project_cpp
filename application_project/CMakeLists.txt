@@ -1,5 +1,6 @@
 ﻿add_executable (application_project "application_project.cpp" "application_project.h" 
                                     "datasets/loader_funcs.cpp" "datasets/mnist.cpp"
+                                    "datasets/cifar10.cpp"
                                     "settings.cpp"
                                     "models/common.cpp" "models/model_wrapper.cpp"
                                     "models/lenet.cpp" "models/resnet.cpp"

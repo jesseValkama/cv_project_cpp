@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 
 int run_inference(Settings &opts, ModelTypes modelType, bool train, int16_t XAI)
 {
-	MnistOpts mnistOpts = opts.mnistOpts;
+	DatasetOpts mnistOpts = opts.mnistOpts;
 	std::vector<std::string> fImgs;
 	for (const auto& entry : fs::directory_iterator(mnistOpts.inferenceDataPath))
 	{
@@ -37,7 +37,7 @@ int run_inference(Settings &opts, ModelTypes modelType, bool train, int16_t XAI)
 
 int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes modelType, bool train, int16_t XAI)
 {
-	MnistOpts mnistOpts = opts.mnistOpts;
+	DatasetOpts mnistOpts = opts.mnistOpts;
 	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts, true);
 	std::string fModel = train ? mnistOpts.workModel : mnistOpts.inferenceModel;
 	modelWrapper->load_weights(fModel);

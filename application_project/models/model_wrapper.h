@@ -24,17 +24,17 @@ class ModelWrapper
 {
 	private:
 		std::optional<Model> model;
-		MnistOpts mnistOpts;
+		DatasetOpts mnistOpts;
 		std::string name = "none";
 
-		void create_model(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis = false);
+		void create_model(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis = false);
 		/*
 		* Method for creating a model, called internally by constructor method
 		*/
 
 	public:
 
-		ModelWrapper(ModelTypes modelType, MnistOpts mnistOpts, bool fmvis = false);
+		ModelWrapper(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis = false);
 		/*
 		* Construction method, automatically creates the model with create_model
 		*/
@@ -65,7 +65,7 @@ class ModelWrapper
 		*/
 };
 
-std::optional<std::string> format_path(std::string path, MnistOpts &mnistOpts);
+std::optional<std::string> format_path(std::string path, DatasetOpts &mnistOpts);
 /*
 * Automatically adds the .pth extention if it is not present in the path
 * TODO: error handling for paths

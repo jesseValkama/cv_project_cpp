@@ -8,14 +8,15 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <torch/torch.h>
 
-#include "../datasets/mnist.h"
+#include "../datasets/data_helper.h"
 #include "../datasets/loader_funcs.h"
-#include "../models/lenet.h"
-#include "../models/resnet.h"
+#include "../datasets/mnist.h"
+#include "../metrics/classification_metrics.h"
 #include "../models/model_wrapper.h"
 #include "../settings.h"
 #include "common.h"
@@ -28,59 +29,64 @@ constexpr const char *ANSI_YELLOW = "\033[33m";
 
 namespace nn = torch::nn;
 
-int lenet_loop(Settings &opts, ModelTypes modelType, bool train, bool test)
+int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, bool train, bool test)
 {
-	DatasetOpts mnistOpts = opts.mnistOpts;
-	
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
-	Info trainValInfo, testInfo;
-	int status = 0;
-	status = load_mnist_info(opts.mnistOpts, trainValInfo, "train");
-	if (status != 0)
-	{
-		return status;
-	}
-	status = load_mnist_info(opts.mnistOpts, testInfo, "test");
-	if (status != 0)
-	{
-		return status;
-	}
-
 	// auto should be justified, since the datatypes are selfexplenatory and really long to typedef
-	auto [trainInfo, valInfo] = split_train_val_info(trainValInfo, 0.85);
-	auto trainset = MnistDataset(trainInfo, mnistOpts, "train")
-		.map(torch::data::transforms::Normalize<>(
-			mnistOpts.mean, mnistOpts.stdev))
-		.map(torch::data::transforms::Stack<>());
-	auto valset = MnistDataset(valInfo, mnistOpts, "val")
-		.map(torch::data::transforms::Normalize<>(
-			mnistOpts.mean, mnistOpts.stdev))
-		.map(torch::data::transforms::Stack<>());
-	auto testset = MnistDataset(testInfo, mnistOpts, "test")
-		.map(torch::data::transforms::Normalize<>(
-			mnistOpts.mean, mnistOpts.stdev))
-		.map(torch::data::transforms::Stack<>());
+	// edit: i really should have used Python
+
+	auto /*Info*/ [trainInfo, valInfo, testInfo] = load_dataset_info(datasetType, opts.mnistOpts);
+	int ret = 0;
+	switch (datasetType)
+	{
+		case DatasetTypes::MnistType:
+		{
+			ret = mnist_loop(opts, modelType, trainInfo, valInfo, testInfo, train, test);
+			if (ret != 0) { return ret; }
+			break;
+		}
+		case DatasetTypes::Cifar10Type:
+		{
+			ret = cifar10_loop(opts, modelType, trainInfo, valInfo, testInfo, train, test);
+			if (ret != 0) { return ret; }
+			break;
+		}
+		default:
+		{
+			std::abort();
+		}
+	}
+	return 0;
+}
+
+int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train, bool test)
+{
+	DatasetOpts datasetOpts = opts.mnistOpts;
+	int status = 0;
+	auto /*Dataset*/ [trainset, valset, testset] = make_mnist_datasets(datasetOpts, trainInfo, valInfo, testInfo);
+
 	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
-		(
-			std::move(trainset),
-			torch::data::DataLoaderOptions().batch_size(mnistOpts.trainBS).workers(mnistOpts.numWorkers)
-		);
+	(
+		std::move(trainset),
+		torch::data::DataLoaderOptions().batch_size(datasetOpts.trainBS).workers(datasetOpts.numWorkers)
+	);
 	auto valloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
-		(
-			std::move(valset),
-			torch::data::DataLoaderOptions().batch_size(mnistOpts.valBS).workers(mnistOpts.numWorkers)
-		);
+	(
+		std::move(valset),
+		torch::data::DataLoaderOptions().batch_size(datasetOpts.valBS).workers(datasetOpts.numWorkers)
+	);
 	auto testloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
-		(
-			std::move(testset),
-			torch::data::DataLoaderOptions().batch_size(mnistOpts.testBS).workers(mnistOpts.numWorkers)
-		);
-	
-	if (train) 
+	(
+		std::move(testset),
+		torch::data::DataLoaderOptions().batch_size(datasetOpts.testBS).workers(datasetOpts.numWorkers)
+	);
+
+	if (train)
 	{
 		status = lenet_train(*trainloader, *valloader, opts, modelType);
-		if (status == 1)
+		if (status != 0)
 		{
+			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
 	}
@@ -88,7 +94,53 @@ int lenet_loop(Settings &opts, ModelTypes modelType, bool train, bool test)
 	if (test)
 	{
 		status = lenet_test(*testloader, opts, modelType, train);
-		if (status == 1)
+		if (status != 0)
+		{
+			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
+			return status;
+		}
+	}
+	
+	return 0;
+}
+
+int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train, bool test)
+{
+	DatasetOpts datasetOpts = opts.mnistOpts;
+	
+	int status = 0;
+	auto /*Dataset*/ [trainset, valset, testset] = make_cifar10_datasets(datasetOpts, trainInfo, valInfo, testInfo);
+
+	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	(
+		std::move(trainset),
+		torch::data::DataLoaderOptions().batch_size(datasetOpts.trainBS).workers(datasetOpts.numWorkers)
+	);
+	auto valloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	(
+		std::move(valset),
+		torch::data::DataLoaderOptions().batch_size(datasetOpts.valBS).workers(datasetOpts.numWorkers)
+	);
+	auto testloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	(
+		std::move(testset),
+		torch::data::DataLoaderOptions().batch_size(datasetOpts.testBS).workers(datasetOpts.numWorkers)
+	);
+
+	if (train)
+	{
+		status = lenet_train(*trainloader, *valloader, opts, modelType);
+		if (status != 0)
+		{
+			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
+			return status;
+		}
+	}
+	
+	if (test)
+	{
+		status = lenet_test(*testloader, opts, modelType, train);
+		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
@@ -221,7 +273,7 @@ int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, boo
 	modelWrapper->load_weights(fModel);
 	modelWrapper->to(opts.dev, true);
 	modelWrapper->eval();
-	MetricsContainer mc = create_mc(mnistOpts.numOfClasses);
+	MetricsContainer mc(mnistOpts.numOfClasses);
 
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : testloader)
@@ -232,7 +284,7 @@ int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, boo
 		calc_cm(labels, outputs, mc);
 	}
 	mc.print_cm();
-	mc.calc_metrics(mnistOpts.numOfClasses);
+	mc.calc_metrics();
 	mc.print_metrics();
 
 	std::string ans;

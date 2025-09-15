@@ -318,14 +318,6 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div)
 	return timg;
 }
 
-std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg)
-{
-	timg = timg.detach().cpu().to(torch::kUInt8);
-	cv::Mat img(timg.size(0), timg.size(1), CV_8UC1, timg.data_ptr());
-	if (img.empty()) { return std::nullopt; }
-	return img.clone();
-}
-
 std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, std::pair<std::vector<double>, std::vector<double>> scale)
 {
 	timg = timg.detach().cpu();
@@ -334,14 +326,19 @@ std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, std::pair<std
 	{
 		torch::Tensor tmean = torch::tensor(scale.first).view({ -1, 1, 1 });
 		torch::Tensor tstdev = torch::tensor(scale.second).view({ -1, 1, 1 });
-		timg.mul_(tstdev).add_(tmean);
+		timg.mul_(tstdev).add_(tmean)
+			.mul_(255);
 	}
-	timg.mul_(255).clamp_(0, 255);
+	timg.clamp_(0, 255);
 	timg = timg.to(torch::kUInt8);
-	
-	timg.squeeze_(0); // tmp
-	cv::Mat img(timg.size(0), timg.size(1), CV_8UC1, timg.data_ptr());
-	if (img.empty()) { return std::nullopt; }
 
+	int nc = timg.size(0);
+	int cv_maketype = CV_MAKETYPE(CV_8U, nc);
+
+	int rows = timg.size(1), cols = timg.size(2);
+	if (nc == 1) { timg.squeeze_(0); }
+
+	cv::Mat img(rows, cols, cv_maketype, timg.data_ptr());
+	if (img.empty()) { return std::nullopt; }
 	return img.clone();
 }

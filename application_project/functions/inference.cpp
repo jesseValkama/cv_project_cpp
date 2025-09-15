@@ -86,7 +86,7 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes 
 		}
 		else
 		{
-			ret = visualise_fm(tfm.value().squeeze_(0), timg, l, p, cv::COLORMAP_DEEPGREEN);
+			ret = visualise_fm(tfm.value(), timg, l, p, cv::COLORMAP_DEEPGREEN);
 			if (ret != 0) { return ret; }
 		}
 	}

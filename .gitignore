@@ -33,3 +33,6 @@ cmake_install.cmake
 # OS junk
 .DS_Store
 Thumbs.db
+
+# TODO
+/application_project/augmentations

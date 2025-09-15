@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "settings.h"
+#include "datasets/data_helper.h"
 #include "functions/handle_args.h"
 #include "functions/inference.h"
 #include "functions/train_lenet.h"
@@ -18,10 +19,7 @@ int main(int argc, char *argv[])
 	* 
 	* IMPLEMENT AMP!!
 	* implement z-scaling for inference
-	* implement transfer optimisatoins for (models?)
-	* 
-	* delete greyscale2Tensor
-	* optimise Tensor2greyscale
+	* fix gradcam to be before relu (+ implement hooks?)
 	* 
 	* complete readme
 	* add unit tests (does googletest even work?)
@@ -43,7 +41,7 @@ int main(int argc, char *argv[])
 
 	if (train || test)
 	{
-		ret = lenet_loop(opts, modelType, train, test);
+		ret = lenet_loop(opts, modelType, datasetType, train, test);
 		if (ret != 0) { return ret; }
 	}
 	if (inference)

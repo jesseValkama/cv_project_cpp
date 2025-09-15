@@ -9,6 +9,14 @@
 
 #include <torch/torch.h>
 
+// this is here to avoid headache with circular imports
+enum DatasetTypes
+{
+	InitType = 0,
+	MnistType = 1,
+	Cifar10Type = 2
+};
+
 struct Cifar10Opts
 {
 	// download the dataset from https://www.cs.toronto.edu/%7Ekriz/cifar.html
@@ -69,13 +77,6 @@ struct MnistOpts
 	// source for the hardcoded mean and stdev values: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
 	std::vector<double> mean = { 0.1307 };
 	std::vector<double> stdev = { 0.3081 };
-};
-
-enum DatasetTypes
-{
-	InitType = 0,
-	MnistType = 1,
-	Cifar10Type = 2
 };
 
 struct DatasetOpts

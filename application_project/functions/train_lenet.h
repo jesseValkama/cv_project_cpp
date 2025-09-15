@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../datasets/data_helper.h"
 #include "../models/lenet.h"
 #include "../models/model_wrapper.h"
 #include "../settings.h"
@@ -18,7 +19,7 @@
 *	https://github.com/pytorch/examples/tree/main/cpp/mnist
 */
 
-int lenet_loop(Settings &opts, ModelTypes modelType, bool train = false, bool test = false);
+int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, bool train = false, bool test = false);
 /*
 	* This is the main training loop
 	* 
@@ -31,6 +32,15 @@ int lenet_loop(Settings &opts, ModelTypes modelType, bool train = false, bool te
 	*	0: successful
 	*	1: failed (logged to terminal)
 */
+
+// this is terrible code having almost similar fns but libtorch uses unique ptrs and the inputs come from the cli
+// please do not have a look at these fns
+
+int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train = false, bool test = false);
+
+int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train = false, bool test = false);
+
+// endof terrible code
 
 template<typename Dataloader>
 int lenet_train(Dataloader &trainloader, Dataloader &valloader, Settings &opts, ModelTypes modelType);

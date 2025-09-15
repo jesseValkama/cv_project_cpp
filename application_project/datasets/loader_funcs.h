@@ -195,18 +195,6 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1);
 *	Tensor: the output img
 */
 
-std::optional<cv::Mat> Tensor2greyscale(torch::Tensor timg);
-/*
-* fn used for fm vis
-* 
-* Args:
-*	timg: fm as a Tensor
-* 
-* Returns:
-*	cv::Mat: successful
-*	nullopt: failed (logged to terminal)
-*/
-
 std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, std::pair<std::vector<double>, std::vector<double>> scale = { {0.1307}, {0.3081} });
 /*
 * Loads a tensor to a cv::Mat.

@@ -5,11 +5,11 @@
 
 bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp)
 {
-	if (epoch <= mem)
+	static size_t dec = 0;
+	if (epoch < wait)
 	{
 		return false;
 	}
-	static size_t dec = 0;
 	if (!imp)
 	{
 		std::cout << "The model did not improve" << std::endl;

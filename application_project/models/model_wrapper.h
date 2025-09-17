@@ -13,11 +13,6 @@
 #include "lenet.h"
 #include "resnet.h"
 
-enum ModelTypes
-{
-	LeNetType = 0,
-	ResNetType = 1
-};
 typedef std::variant<LeNet, ResNet> Model;
 
 class ModelWrapper
@@ -41,6 +36,7 @@ class ModelWrapper
 
 		void save_weights(std::string path);
 		void load_weights(std::string path);
+		void print_layers();
 		void train();
 		void eval();
 		void to(torch::Device dev, bool non_blocking = false);

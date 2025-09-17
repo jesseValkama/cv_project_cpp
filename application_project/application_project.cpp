@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "settings.h"
 #include "datasets/data_helper.h"
@@ -11,6 +12,8 @@
 #include "functions/inference.h"
 #include "functions/train_lenet.h"
 #include "models/model_wrapper.h"
+
+#include <yaml-cpp/yaml.h>
 
 int main(int argc, char *argv[])
 {
@@ -20,9 +23,10 @@ int main(int argc, char *argv[])
 	* IMPLEMENT AMP!!
 	* implement z-scaling for inference
 	* fix gradcam to be before relu (+ implement hooks?)
+	* optimise reading cifar10
 	* 
 	* complete readme
-	* add unit tests (does googletest even work?)
+	* add unit tests (does googletest even work with libtorch?)
 	*/
 	
 	std::optional<std::unordered_map<std::string, int16_t>> args = handle_args(argc, argv);
@@ -36,7 +40,7 @@ int main(int argc, char *argv[])
 	int16_t XAI = (*args).at("xai");
 	DatasetTypes datasetType = static_cast<DatasetTypes>((*args).at("dataset"));
 
-	Settings opts(datasetType);
+	Settings opts(datasetType, modelType);
 	int ret = 0;
 
 	if (train || test)

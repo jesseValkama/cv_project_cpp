@@ -1,0 +1,83 @@
+cifar10_data_paths:
+  train_paths: # must be a list
+    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_1.bin"
+    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_2.bin"
+    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_3.bin"
+    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_4.bin"
+    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_5.bin"
+  test_paths: # must be a list
+    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/test_batch.bin"
+  inference_data:
+    inference_path: "D:/datasets/inference_imgs"
+  meta_data:
+    meta_path: "D:/datasets/cifar-10-binary/cifar-10-batches-bin/batches.meta.txt"
+
+cifar10_model_paths:
+  save_path: "D:/self-studies/application_project/application_project/weights"
+  inference_name: "lenet_inference" # you can leave out the formatting like .pth, it is automatically added for model names
+  test_name: "lenet_inference"
+  work_name: "working"
+
+cifar10_train_settings:
+  dataset_info:
+    image_size: 32
+    num_classes: 10
+    num_channels: 3
+    mean: [0.4914, 0.4822, 0.4465] # credit: https://www.kaggle.com/code/abdelrahmanhesham601/resnet-18-fine-tuning-on-cifar-10
+    standard_deviation: [0.247, 0.243, 0.261]
+  batch_sizes:
+    train: 128
+    val: 128
+    test: 128
+  multiprocessing:
+    num_workers: 6 # cores to use for multiprocessing
+    async: true # async transfers to vram
+
+mnist_data_paths:
+  train_data:
+    train_imgs: "D:/datasets/mnist/train-images.idx3-ubyte"
+    train_labels: "D:/datasets/mnist/train-labels.idx1-ubyte"
+  test_data:
+    test_imgs: "D:/datasets/mnist/t10k-images.idx3-ubyte"
+    test_labels: "D:/datasets/mnist/t10k-labels.idx1-ubyte"
+  inference_data:
+    inference_imgs: "D:/datasets/inference_imgs"
+ 
+mnist_model_paths:
+    save_path: "D:/self-studies/application_project/application_project/weights"
+    inference_name: "lenet_inference" # you can leave out the formatting like .pth, it is automatically added for model names
+    test_name: "lenet_inference"
+    work_name: "working"
+  
+mnist_train_settings:
+  dataset_info:
+    image_size: 28
+    num_classes: 10
+    num_channels: 1
+    mean: [0.1307] # credit: https://www.digitalocean.com/community/tutorials/writing-lenet5-from-scratch-in-python 
+    standard_deviation: [0.3081]
+  batch_sizes:
+    train: 128
+    val: 128
+    test: 128
+  multiprocessing:
+    num_workers: 6 # cores to use for multiprocessing
+    async: true # async transfers to vram
+
+# resnet options (change the actual model in models/resnet.h)
+resnet_imgresz: 224
+
+#lenet options (change the actual model in models/lenet.h)
+lenet_imgresz: 32
+
+dev: false # set in the actual functions/settings.h file
+general_settings:
+  loop:
+    min_epochs: 8
+    max_epochs: 16
+    validation_interval: 1 # epoch % x == 0 ? validate : not
+    early_stop_counter: 1 # not improved in a row to trigger early stop
+    amp: false # not implemented yet
+  optimiser:
+    learning_rate: 0.001
+    weight_decay: 0.0005

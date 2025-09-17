@@ -34,8 +34,9 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
 	// auto should be justified, since the datatypes are selfexplenatory and really long to typedef
 	// edit: i really should have used Python
+	// this is terrible code having almost similar fns but libtorch uses unique ptrs and the inputs come from the cli
 
-	auto /*Info*/ [trainInfo, valInfo, testInfo] = load_dataset_info(datasetType, opts.mnistOpts);
+	auto [trainInfo, valInfo, testInfo] = load_dataset_info(datasetType, opts.mnistOpts);
 	int ret = 0;
 	switch (datasetType)
 	{
@@ -61,21 +62,23 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 
 int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train, bool test)
 {
+	std::cout << ANSI_MAGENTA << "Starting to load Mnist dataset" << ANSI_END << std::endl;
+
 	DatasetOpts datasetOpts = opts.mnistOpts;
 	int status = 0;
-	auto /*Dataset*/ [trainset, valset, testset] = make_mnist_datasets(datasetOpts, trainInfo, valInfo, testInfo);
+	auto [trainset, valset, testset] = make_mnist_datasets(datasetOpts, trainInfo, valInfo, testInfo);
 
 	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 	(
 		std::move(trainset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.trainBS).workers(datasetOpts.numWorkers)
 	);
-	auto valloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	auto valloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
 	(
 		std::move(valset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.valBS).workers(datasetOpts.numWorkers)
 	);
-	auto testloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	auto testloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
 	(
 		std::move(testset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.testBS).workers(datasetOpts.numWorkers)
@@ -106,22 +109,23 @@ int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const
 
 int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train, bool test)
 {
+	std::cout << ANSI_MAGENTA << "Starting to load the Cifar10 dataset" << ANSI_END << std::endl;
+
 	DatasetOpts datasetOpts = opts.mnistOpts;
-	
 	int status = 0;
-	auto /*Dataset*/ [trainset, valset, testset] = make_cifar10_datasets(datasetOpts, trainInfo, valInfo, testInfo);
+	auto [trainset, valset, testset] = make_cifar10_datasets(datasetOpts, trainInfo, valInfo, testInfo);
 
 	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 	(
 		std::move(trainset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.trainBS).workers(datasetOpts.numWorkers)
 	);
-	auto valloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	auto valloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
 	(
 		std::move(valset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.valBS).workers(datasetOpts.numWorkers)
 	);
-	auto testloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
+	auto testloader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>
 	(
 		std::move(testset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.testBS).workers(datasetOpts.numWorkers)
@@ -150,15 +154,17 @@ int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, con
 	return 0;
 }
 
-template<typename Dataloader>
-int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts, ModelTypes modelType)
+
+template<typename Randomloader, typename Sequentialloader>
+int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings &opts, ModelTypes modelType)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	
 	std::shared_ptr<ModelWrapper> modelWrapper = std::make_shared<ModelWrapper>(modelType, mnistOpts);
 	modelWrapper->to(opts.dev, true);
+	modelWrapper->print_layers();
 
-	torch::optim::Adam optimiser(modelWrapper->parameters(), torch::optim::AdamOptions(opts.learningRate));
+	torch::optim::Adam optimiser(modelWrapper->parameters(), torch::optim::AdamOptions(opts.learningRate).weight_decay(opts.weightDecay));
 	torch::nn::CrossEntropyLoss lossFn;
 
 	int ret = 0;
@@ -220,8 +226,8 @@ int lenet_train(Dataloader& trainloader, Dataloader& valloader, Settings &opts, 
 	return 0;
 }
 
-template<typename Dataloader>
-int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+template<typename Sequentialloader>
+int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	modelWrapper->eval();
@@ -262,8 +268,8 @@ int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Dataloader &valloader,
 	return 0;
 }
 
-template<typename Dataloader>
-int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, bool train)
+template<typename Sequentialloader>
+int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelType, bool train)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts);

@@ -58,6 +58,16 @@ void ModelWrapper::load_weights(std::string path)
 	std::visit([&](auto &m) { torch::load(m, fPath.value()); }, model.value());
 }
 
+void ModelWrapper::print_layers()
+{
+	if (!model.has_value()) { std::abort; }
+	std::visit([&](auto &m)
+		{for (const auto &layer : m->named_modules())
+	{
+		std::cout << layer.key() << " : " << *layer.value() << std::endl;
+	}}, (*model));
+}
+
 void ModelWrapper::train()
 {
 	if (!model.has_value()) { std::abort(); }

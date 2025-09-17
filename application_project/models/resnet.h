@@ -16,7 +16,7 @@ namespace nn = torch::nn;
 struct ResNetImpl : torch::nn::Module
 {
 	/*
-	* This is an implementation of ResNet18, which can be changed in the params below
+	* This is an implementation of ResNet34, which can be changed in the params below
 	* 
 	* Credits:
 	* 
@@ -40,10 +40,10 @@ struct ResNetImpl : torch::nn::Module
 	ConvBlockParams rb4c = {256,512,3,1,1};
 	
 	// the pair is automatically operated (see make_layer), but you need to define the first stride
-	ResidualBlockParams rb1 = {rb1c, 2, 1};
-	ResidualBlockParams rb2 = {rb2c, 2, 2};
-	ResidualBlockParams rb3 = {rb3c, 2, 2};
-	ResidualBlockParams rb4 = {rb4c, 2, 2};
+	ResidualBlockParams rb1 = {rb1c, 3, 1};
+	ResidualBlockParams rb2 = {rb2c, 4, 2};
+	ResidualBlockParams rb3 = {rb3c, 6, 2};
+	ResidualBlockParams rb4 = {rb4c, 3, 2};
 
 	ConvBlock conv{ nullptr };
 	ConvBlock dsBlock{ nullptr };

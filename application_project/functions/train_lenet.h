@@ -33,17 +33,15 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	*	1: failed (logged to terminal)
 */
 
-// this is terrible code having almost similar fns but libtorch uses unique ptrs and the inputs come from the cli
-// please do not have a look at these fns
-
 int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train = false, bool test = false);
 
 int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train = false, bool test = false);
 
 // endof terrible code
 
-template<typename Dataloader>
-int lenet_train(Dataloader &trainloader, Dataloader &valloader, Settings &opts, ModelTypes modelType);
+
+template<typename Randomloader, typename Sequentialloader>
+int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings &opts, ModelTypes modelType);
 /*
 	* The function to train LeNet
 	* 
@@ -57,8 +55,8 @@ int lenet_train(Dataloader &trainloader, Dataloader &valloader, Settings &opts, 
 	*	1: failed (logged to terminal)
 */
 
-template<typename Dataloader>
-int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
+template<typename Sequentialloader>
+int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 
@@ -75,8 +73,8 @@ int lenet_val(std::shared_ptr<ModelWrapper> model, Dataloader &valloader, float 
 	*	1: failed (logged to teminal)
 */
 
-template<typename Dataloader>
-int lenet_test(Dataloader &testloader, Settings &opts, ModelTypes modelType, bool train);
+template<typename Sequentialloader>
+int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelType, bool train);
 /*
 	* The function to test LeNet, currently only tests the model from the last training
 	* 

@@ -1,4 +1,4 @@
-﻿add_executable (application_project "application_project.cpp" "application_project.h" 
+﻿add_executable (application_project "application_project.cpp" "application_project.h"
                                     "datasets/loader_funcs.cpp" "datasets/mnist.cpp"
                                     "datasets/cifar10.cpp" "datasets/data_helper.cpp"
                                     "settings.cpp"
@@ -10,6 +10,14 @@
                                     "functions/gradcam.cpp" "functions/visualise.cpp" 
 )
 
+include(FetchContent)
+FetchContent_Declare(
+  yaml-cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(yaml-cpp)
+
 set(CMAKE_PREFIX_PATH "D:/cpptools/libtorch;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6;D:/cpptools/opencv/build")
 
 find_package(Torch REQUIRED)
@@ -18,7 +26,7 @@ find_package(OpenCV REQUIRED)
 include_directories(
     ${OPENCV_INCLUDE_DIRS}
 )
-target_link_libraries(application_project "${TORCH_LIBRARIES}" ${OpenCV_LIBS})
+target_link_libraries(application_project PRIVATE "${TORCH_LIBRARIES}" PRIVATE ${OpenCV_LIBS} PUBLIC yaml-cpp::yaml-cpp)
 
 set_property(TARGET application_project PROPERTY CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

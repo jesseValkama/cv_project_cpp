@@ -123,7 +123,7 @@ int load_cifar10_batch_info(std::ifstream &stream, Info &o, uint32_t n, uint32_t
 *	1: failed (logged to terminal)
 */
 
-int load_cifar10_info(DatasetOpts &opts, Info &o, std::string type, uint32_t bs = 1000);
+int load_cifar10_info(DatasetOpts &opts, Info &o, std::string type, uint32_t bs = 10000);
 /*
 * Function to combine cifar-10 data (by default train is divided into 5 batches)
 * 
@@ -151,10 +151,11 @@ std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz = -1
 *	nullopt: failed (logged to terminal)
 */
 
-std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1, uint32_t depth = 1);
+std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info& d, uint32_t rows, uint32_t cols, int imgresz = -1, uint32_t depth = 1, bool channelWise = false);
 /*
 * Naive function to load mnist img and label
 * Requires info from load_mnist_info
+* RGB imgs are returned as bgr
 * 
 * Args:
 *	path: path to the stream
@@ -182,9 +183,9 @@ torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div = -1);
 *	tensor: the output img
 */
 
-torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1);
+torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1, bool toRGB = false);
 /*
-* Loads a cv::Mat into a Tensor (normalises it by dividing with div, -1 to skip, but doesn't include z scaling)
+* Loads an rgb cv::Mat into a Tensor (normalises it by dividing with div, -1 to skip, but doesn't include z scaling)
 *
 * Args:
 *	img: the input img
@@ -195,7 +196,7 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1);
 *	Tensor: the output img
 */
 
-std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, std::pair<std::vector<double>, std::vector<double>> scale = { {0.1307}, {0.3081} });
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {0.1307}, {0.3081} });
 /*
 * Loads a tensor to a cv::Mat.
 * Denormalisation is also possible, default z-scaling values are for mnist,
@@ -204,6 +205,7 @@ std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, std::pai
 * Args:
 *	timg: img as a tensor
 *	squeeze: the index to squeeze from -1 to skip 
+*	toBGR: whether to transform from rgb2bgr or not
 *	scale: 1st mean and 2nd standard deviation for z-scaling
 * 
 * Returns:

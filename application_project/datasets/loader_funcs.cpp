@@ -223,16 +223,16 @@ int load_cifar10_info(DatasetOpts &opts, Info &o, std::string type, uint32_t bs)
 	int ret = 0;
 	std::vector<std::string> fBatch = (type == "train") ? opts.fTrain : opts.fTest;
 	o.reserve(fBatch.size() * bs);
-	for (std::string &fBatch : fBatch)
+	for (std::string &fb : fBatch)
 	{
-		std::ifstream s(fBatch, std::ios::in | std::ios::binary);
+		std::ifstream s(fb, std::ios::in | std::ios::binary);
 		ret = load_cifar10_batch_info(s, o, bs);
 		if (ret != 0) { return ret; }
 	}
 	return 0;
 }
 
-std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols, int imgresz, uint32_t depth)
+std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t i, const Info &d, uint32_t rows, uint32_t cols, int imgresz, uint32_t depth, bool channelWise)
 {
 	std::ifstream fimg(path, std::ios::in | std::ios::binary);
 	if (!fimg.is_open())
@@ -260,12 +260,25 @@ std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t 
 		return std::nullopt;
 	}
 
-	cv::Mat img(rows, cols, CV_8UC1, buf.data());
+	int cv_maketype = CV_MAKETYPE(CV_8U, depth);
+	cv::Mat img(rows, cols, cv_maketype);
+	if (channelWise) // presumes rgb input -> bgr
+	{
+		cv::Mat R(rows, cols, CV_8UC1, buf.data());
+		cv::Mat G(rows, cols, CV_8UC1, buf.data() + rows * cols);
+		cv::Mat B(rows, cols, CV_8UC1, buf.data() + 2 * rows * cols);
+		cv::merge(std::vector<cv::Mat>{ B, G, R }, img);
+	}
+	else
+	{
+		std::memcpy(img.data, buf.data(), buf.size());
+	}
 	if (img.empty())
 	{
 		std::cout << "couldn't open the img" << std::endl;
 		return std::nullopt;
 	}
+	
 	if (imgresz != -1)
 	{
 		cv::resize(img, img, cv::Size(imgresz, imgresz));
@@ -303,8 +316,9 @@ torch::Tensor greyscale2Tensor(cv::Mat img, int imgsz, int div)
 	return timg;
 }
 
-torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div)
+torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div, bool toRGB)
 {
+	if (toRGB) { cv::cvtColor(img, img, cv::COLOR_BGR2RGB); }
 	torch::Tensor timg = torch::from_blob(
 		img.data,
 		{ imgsz, imgsz, nc},
@@ -318,7 +332,7 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div)
 	return timg;
 }
 
-std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, std::pair<std::vector<double>, std::vector<double>> scale)
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, bool toBGR, std::pair<std::vector<double>, std::vector<double>> scale)
 {
 	timg = timg.detach().cpu();
 	if (squeeze != -1) { timg.squeeze_(squeeze); }
@@ -331,14 +345,14 @@ std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, std::pair<std
 	}
 	timg.clamp_(0, 255);
 	timg = timg.to(torch::kUInt8);
+	timg = timg.permute({1, 2, 0}).contiguous();
 
-	int nc = timg.size(0);
+	int nc = timg.size(2);
 	int cv_maketype = CV_MAKETYPE(CV_8U, nc);
+	int rows = timg.size(0), cols = timg.size(1);
 
-	int rows = timg.size(1), cols = timg.size(2);
-	if (nc == 1) { timg.squeeze_(0); }
-
-	cv::Mat img(rows, cols, cv_maketype, timg.data_ptr());
+	cv::Mat img(rows, cols, cv_maketype, timg.data_ptr<uchar>());
 	if (img.empty()) { return std::nullopt; }
+	if (toBGR) { cv::cvtColor(img, img, cv::COLOR_RGB2BGR); }
 	return img.clone();
 }

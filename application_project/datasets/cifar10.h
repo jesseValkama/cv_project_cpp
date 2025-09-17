@@ -24,6 +24,7 @@ class Cifar10Dataset : public torch::data::datasets::Dataset<Cifar10Dataset>
 	const Info info;
 	const DatasetOpts cifar10Opts;
 	const std::string type;
+	const int bs = 10000;
 
 	public:
 		Cifar10Dataset(const Info &info, const DatasetOpts &cifar10Opts, const std::string type)

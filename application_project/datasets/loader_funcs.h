@@ -138,12 +138,13 @@ int load_cifar10_info(DatasetOpts &opts, Info &o, std::string type, uint32_t bs 
 *	1: failed (logged to terminal)
 */
 
-std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz = -1);
+std::optional<cv::Mat> load_png(std::string path, int nc, int imgresz = -1);
 /*
-* Loads a greyscale img from path (and potentially resizes it)
+* Loads an img from path (and potentially resizes it)
 * 
 * Args:
 *	path: path to the img
+*	nc: number of channels for the img
 *	imgresz: the size to resize the img to (-1 for no resize)
 * 
 * Returns:
@@ -196,7 +197,7 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1, bool toR
 *	Tensor: the output img
 */
 
-std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {0.1307}, {0.3081} });
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {}, {} });
 /*
 * Loads a tensor to a cv::Mat.
 * Denormalisation is also possible, default z-scaling values are for mnist,
@@ -211,6 +212,15 @@ std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toB
 * Returns:
 *	img: output cv::Mat
 *	nullopt: failed (logged to terminal)
+*/
+
+void z_scale_Tensor(torch::Tensor &timg, std::pair<std::vector<double>, std::vector<double>> scale);
+/*
+* Performs z-scaling on a tensor
+* 
+* Args:
+*	timg: the input tensor
+*	scale: pair of vector of means and stdevs
 */
 
 #endif

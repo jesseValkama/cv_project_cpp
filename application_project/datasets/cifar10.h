@@ -3,6 +3,8 @@
 
 #include <torch/torch.h>
 
+#include <vector>
+
 #include "loader_funcs.h"
 #include "../settings.h"
 
@@ -24,11 +26,12 @@ class Cifar10Dataset : public torch::data::datasets::Dataset<Cifar10Dataset>
 	const Info info;
 	const DatasetOpts cifar10Opts;
 	const std::string type;
-	const int bs = 10000;
+	const std::vector<int> idxs;
+	const bool async = false;
 
 	public:
-		Cifar10Dataset(const Info &info, const DatasetOpts &cifar10Opts, const std::string type)
-			: info(info), cifar10Opts(cifar10Opts), type(type) {}
+		Cifar10Dataset(const Info &info, const DatasetOpts &cifar10Opts, const std::string type, const std::vector<int> idxs, const bool async)
+			: info(info), cifar10Opts(cifar10Opts), type(type), idxs(idxs), async(async) {}
 				
 		Batch get(size_t i);
 		/*

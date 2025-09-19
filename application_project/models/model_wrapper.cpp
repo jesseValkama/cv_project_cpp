@@ -58,7 +58,7 @@ void ModelWrapper::load_weights(std::string path)
 	std::visit([&](auto &m) { torch::load(m, fPath.value()); }, model.value());
 }
 
-void ModelWrapper::print_layers()
+void ModelWrapper::print_layers() const
 {
 	if (!model.has_value()) { std::abort; }
 	std::visit([&](auto &m)
@@ -86,13 +86,13 @@ void ModelWrapper::to(torch::Device dev, bool non_blocking)
 	std::visit([&](auto &m) { m->to(dev, non_blocking); }, model.value());
 }
 
-std::vector<torch::Tensor> ModelWrapper::parameters(bool recurse)
+std::vector<torch::Tensor> ModelWrapper::parameters(bool recurse) const
 {
 	if (!model.has_value()) { std::abort(); }
 	return std::visit([&](auto &m) { return m->parameters(recurse); }, model.value());
 }
 
-std::string ModelWrapper::get_name()
+std::string ModelWrapper::get_name() const
 {
 	return name;
 }

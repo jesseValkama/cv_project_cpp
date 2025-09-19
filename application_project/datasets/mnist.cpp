@@ -16,20 +16,18 @@ Batch MnistDataset::get(size_t i)
 	
 	// train and val in the same file
 	std::string fImgs = (type == "train" || type == "val") ? mnistOpts.fTrainImgs : mnistOpts.fTestImgs;
-	
-	// console notifies if problems arise with opening stream or img, naive, since it doesn't loop through all
-	int n = info.size();
-	for (size_t j = i; j < n; ++j)
+	std::optional<std::pair<cv::Mat, char>> p = load_mnist_img(fImgs, i, info, mnistOpts.imgsz, mnistOpts.imgsz, mnistOpts.imgresz);
+	if (p.has_value())
 	{
-		std::optional<std::pair<cv::Mat, char>> p = load_mnist_img(fImgs, j, info, mnistOpts.imgsz, mnistOpts.imgsz, mnistOpts.imgresz);
-		if (p.has_value())
+		torch::Tensor timg = greyscale2Tensor(p.value().first, mnistOpts.imgresz, 255);
+		torch::Tensor tlabel = torch::tensor(p.value().second, torch::kLong);
+		if (async)
 		{
-			torch::Tensor timg = greyscale2Tensor(p.value().first, mnistOpts.imgresz, 255).pin_memory();
-			torch::Tensor tlabel = torch::tensor(p.value().second, torch::kLong).pin_memory();
-			return {timg, tlabel};
+			timg = timg.pin_memory();
+			tlabel = tlabel.pin_memory();
 		}
+		return { timg, tlabel };
 	}
-	// crashes if data is corrupt
 	std::abort();
 }
 

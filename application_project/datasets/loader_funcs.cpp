@@ -287,9 +287,11 @@ std::optional<std::pair<cv::Mat, char>> load_mnist_img(std::string path, size_t 
 	return std::make_pair(img.clone(), l);
 }
 
-std::optional<cv::Mat> load_png_greyscale_img(std::string path, int imgresz)
+std::optional<cv::Mat> load_png(std::string path, int nc, int imgresz)
 {
-	cv::Mat img = cv::imread(path, cv::IMREAD_GRAYSCALE);
+	assert(nc == 1 || nc == 3);
+	cv::ImreadModes mode = (nc == 3) ? cv::IMREAD_COLOR : cv::IMREAD_GRAYSCALE;
+	cv::Mat img = cv::imread(path, mode);
 	if (img.empty())
 	{
 		return std::nullopt;
@@ -355,4 +357,12 @@ std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, bool toBGR, s
 	if (img.empty()) { return std::nullopt; }
 	if (toBGR) { cv::cvtColor(img, img, cv::COLOR_RGB2BGR); }
 	return img.clone();
+}
+
+void z_scale_Tensor(torch::Tensor &timg, std::pair<std::vector<double>, std::vector<double>> scale)
+{
+	torch::Tensor mean = torch::tensor(scale.first).view({ -1, 1, 1 });
+	torch::Tensor stdev = torch::tensor(scale.second).view({ -1, 1, 1 });
+	timg -= mean;
+	timg /= stdev;
 }

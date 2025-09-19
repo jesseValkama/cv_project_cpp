@@ -4,9 +4,6 @@
 
 DatasetOpts::DatasetOpts(YAML::Node &yaml, ModelTypes modelType, DatasetTypes datasetType)
 {
-	MnistOpts mnistOpts;
-	Cifar10Opts cifar10Opts;
-	
 	switch (datasetType)
 	{
 		case DatasetTypes::MnistType:

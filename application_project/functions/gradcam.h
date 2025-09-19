@@ -6,7 +6,9 @@
 #include <optional>
 #include <stdint.h>
 
-int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg, int64_t label, double prob);
+#include "../settings.h"
+
+int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg, int64_t label, double prob, DatasetOpts &datasetOpts);
 /*
 * Student's implementation for gradcam
 * Doesn't use hooks to make it simplier (not good for modularity)
@@ -19,6 +21,10 @@ int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg, int64_
 * Args:
 *	y: the logit to be backpropagated on
 *	tfm: feature map as a Tensor
+*	inputImg: the input img as a Tensor
+*	label: the label idx for the prediction
+*	prob: the probability for the prediction
+*	datasetOpts: settings for the dataset
 * 
 * Returns:
 *	0: successfull

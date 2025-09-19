@@ -23,10 +23,11 @@ class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 	const Info info;
 	const DatasetOpts mnistOpts;
 	const std::string type;
+	const bool async = false;
 
 	public:
-		MnistDataset(const Info& info, const DatasetOpts& mnistOpts, const std::string type) 
-			: info(info), mnistOpts(mnistOpts), type(type) {}
+		MnistDataset(const Info& info, const DatasetOpts& mnistOpts, const std::string type, const bool async) 
+			: info(info), mnistOpts(mnistOpts), type(type), async(async) {}
 				
 		Batch get(size_t i);
 		/*

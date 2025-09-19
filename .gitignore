@@ -27,12 +27,14 @@ cmake_install.cmake
 
 # Weights
 /application_project/weights/working.pth
-/application_project/weights/lenet_inference.pth
-/application_project/weights/resnet18_inference.pth
+/application_project/weights/lenet_cifar10.pth
+/application_project/weights/resnet_cifar10.pth
+/application_project/weights/resnet18_mnist.pth
 
 # OS junk
 .DS_Store
 Thumbs.db
 
 # TODO
-/application_project/augmentations
+/application_project/augmentations/colour.cpp
+/application_project/augmentations/colour.h

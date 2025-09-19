@@ -13,7 +13,7 @@ typedef std::vector<std::unordered_map<std::string, uint32_t>> AllCm;
 typedef std::unordered_map<std::string, uint32_t> ClsCm;
 typedef std::unordered_map<std::string, float> AvgMetrics;
 
-struct MetricsContainer
+class MetricsContainer
 {
 	/*
 	* Container to store the metrics, needs functions such as create_mc and calc_mc
@@ -23,11 +23,18 @@ struct MetricsContainer
 	*	talbe: the actual table for confusion matrix
 	*	metrics: the container for recall, precision and accuracy
 	*/
+private:
 	AllCm cm;
 	torch::Tensor table;
+	std::vector<float> recalls;
+	std::vector<float> precisions;
+	std::vector<float> accuracies;
 	AvgMetrics metrics;
 	uint32_t nCls;
+	void print_avg_metrics();
+	void print_class_metrics(int idx);
 
+public:
 	MetricsContainer(uint32_t nCls);
 	/*
 	* Constructor method, inits the cm and table
@@ -54,7 +61,7 @@ struct MetricsContainer
 	*	nCls: the number of classes
 	*/
 
-	AllCm get_cm();
+	AllCm get_cm() const;
 	/*
 	* Method to return the tp, fp and fn
 	* 
@@ -62,14 +69,17 @@ struct MetricsContainer
 	*	cm: tp, fp, fn
 	*/
 
-	void print_cm();
+	void print_cm() const;
 	/*
 	* Method to print the cm table
 	*/
 
-	void print_metrics();
+	void print_metrics(int idx = -1);
 	/*
-	* Method to print out metrics recall, precision and accuracy
+	* Method to print out metrics: recall, precision and accuracy
+	* 
+	* Args:
+	*	idx: which class to print (-2 average metrics, -1 all per class metrics, n class idx)
 	*/
 };
 

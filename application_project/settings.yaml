@@ -1,3 +1,7 @@
+# most of the settings can be changed in this file, however don't forget that train, test, inference, model
+# and dataset are set from the command-line arguments
+
+# i downloaded the dataset from https://www.cs.toronto.edu/%7Ekriz/cifar.html
 cifar10_data_paths:
   train_paths: # must be a list
     - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_1.bin"
@@ -8,14 +12,14 @@ cifar10_data_paths:
   test_paths: # must be a list
     - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/test_batch.bin"
   inference_data:
-    inference_path: "D:/datasets/inference_imgs"
+    inference_path: "D:/datasets/cifar10_inference_imgs"
   meta_data:
     meta_path: "D:/datasets/cifar-10-binary/cifar-10-batches-bin/batches.meta.txt"
 
 cifar10_model_paths:
   save_path: "D:/self-studies/application_project/application_project/weights"
-  inference_name: "lenet_inference" # you can leave out the formatting like .pth, it is automatically added for model names
-  test_name: "lenet_inference"
+  inference_name: "resnet_cifar10" # you can leave out the formatting like .pth, it is automatically added for model names
+  test_name: "resnet_cifar10"
   work_name: "working"
 
 cifar10_train_settings:
@@ -26,13 +30,18 @@ cifar10_train_settings:
     mean: [0.4914, 0.4822, 0.4465] # credit: https://www.kaggle.com/code/abdelrahmanhesham601/resnet-18-fine-tuning-on-cifar-10
     standard_deviation: [0.247, 0.243, 0.261]
   batch_sizes:
-    train: 128
-    val: 128
-    test: 128
+    train: 256
+    val: 256
+    test: 256
   multiprocessing:
     num_workers: 6 # cores to use for multiprocessing
     async: true # async transfers to vram
 
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+
+# i downloaded the dataset from https://www.kaggle.com/datasets/hojjatk/mnist-dataset
 mnist_data_paths:
   train_data:
     train_imgs: "D:/datasets/mnist/train-images.idx3-ubyte"
@@ -41,12 +50,12 @@ mnist_data_paths:
     test_imgs: "D:/datasets/mnist/t10k-images.idx3-ubyte"
     test_labels: "D:/datasets/mnist/t10k-labels.idx1-ubyte"
   inference_data:
-    inference_imgs: "D:/datasets/inference_imgs"
+    inference_imgs: "D:/datasets/mnist_inference_imgs"
  
 mnist_model_paths:
     save_path: "D:/self-studies/application_project/application_project/weights"
-    inference_name: "lenet_inference" # you can leave out the formatting like .pth, it is automatically added for model names
-    test_name: "lenet_inference"
+    inference_name: "lenet_mnist" # you can leave out the formatting like .pth, it is automatically added for model names
+    test_name: "lenet_mnist"
     work_name: "working"
   
 mnist_train_settings:
@@ -64,6 +73,10 @@ mnist_train_settings:
     num_workers: 6 # cores to use for multiprocessing
     async: true # async transfers to vram
 
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+
 # resnet options (change the actual model in models/resnet.h)
 resnet_imgresz: 224
 
@@ -73,11 +86,11 @@ lenet_imgresz: 32
 dev: false # set in the actual functions/settings.h file
 general_settings:
   loop:
-    min_epochs: 8
-    max_epochs: 16
+    min_epochs: 15
+    max_epochs: 20
     validation_interval: 1 # epoch % x == 0 ? validate : not
-    early_stop_counter: 1 # not improved in a row to trigger early stop
+    early_stop_counter: 2 # not improved in a row to trigger early stop
     amp: false # not implemented yet
   optimiser:
     learning_rate: 0.001
-    weight_decay: 0.0005
+    weight_decay: 0.0

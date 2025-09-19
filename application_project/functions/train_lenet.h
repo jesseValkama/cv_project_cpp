@@ -33,12 +33,9 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	*	1: failed (logged to terminal)
 */
 
-int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train = false, bool test = false);
+int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, bool train = false, bool test = false);
 
-int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train = false, bool test = false);
-
-// endof terrible code
-
+int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, bool train = false, bool test = false);
 
 template<typename Randomloader, typename Sequentialloader>
 int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings &opts, ModelTypes modelType);
@@ -56,7 +53,7 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 */
 
 template<typename Sequentialloader>
-int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
+int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, double &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 

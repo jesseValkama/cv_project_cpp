@@ -1,5 +1,6 @@
 #include "classification_metrics.h"
 
+#include <cassert>
 #include <iomanip>
 #include <iostream>
 #include <stdint.h>
@@ -23,12 +24,12 @@ void MetricsContainer::add(int64_t i, std::string term, std::pair<int64_t, int64
 	table[p.first][p.second] += 1;
 }
 
-AllCm MetricsContainer::get_cm()
+AllCm MetricsContainer::get_cm() const
 {
 	return cm;
 }
 
-void MetricsContainer::print_cm()
+void MetricsContainer::print_cm() const
 {
 	std::cout << "The confusion matrix:\n" << table << std::endl;
 }
@@ -36,11 +37,18 @@ void MetricsContainer::print_cm()
 void MetricsContainer::calc_metrics()
 {
 	float recall = 0.0, precision = 0.0, accuracy = 0.0;
+	float currentRecall = 0.0, currentPrecision = 0.0, currentAccuracy = 0.0;
 	for (int i = 0; i < nCls; ++i)
 	{
-		recall += (float) cm[i]["tp"] / ((float) cm[i]["tp"] + (float) cm[i]["fn"]);
-		precision += (float) cm[i]["tp"] / ((float) cm[i]["tp"] + (float) cm[i]["fp"]);
-		accuracy += (float) cm[i]["tp"] / ((float) cm[i]["tp"] + (float) cm[i]["fp"] + (float) cm[i]["fn"]);
+		currentRecall = (float) cm[i]["tp"] / ((float) cm[i]["tp"] + (float) cm[i]["fn"]);
+		recalls.push_back(currentRecall);
+		recall += currentRecall;
+		currentPrecision = (float) cm[i]["tp"] / ((float) cm[i]["tp"] + (float) cm[i]["fp"]);
+		precisions.push_back(currentPrecision);
+		precision += currentPrecision;
+		currentAccuracy = (float) cm[i]["tp"] / ((float) cm[i]["tp"] + (float) cm[i]["fp"]); // each incorrect prediction adds both a fp and fn for different classes
+		accuracies.push_back(currentAccuracy);
+		accuracy += currentAccuracy;
 	}
 	recall /= (float) nCls;
 	precision /= (float) nCls;
@@ -49,13 +57,52 @@ void MetricsContainer::calc_metrics()
 	metrics = { {"recall", recall},{"precision", precision},{"accuracy", accuracy} };
 }
 
-void MetricsContainer::print_metrics()
+void MetricsContainer::print_metrics(int idx)
 {
+	assert(idx >= -2);
 	std::cout << std::fixed;
 	std::cout << std::setprecision(2);
+	
+	std::cout << "\n";
+	std::cout << "----------------------------------------------METRICS----------------------------------------------" << std::endl;
+	std::cout << "\n";
+
+	if (idx == -2) { print_avg_metrics(); }
+	else { print_class_metrics(idx); }
+
+	std::cout << "-------------------------------------------END OF METRICS-------------------------------------------" << std::endl;
+	std::cout << "\n";
+
+}
+
+void MetricsContainer::print_avg_metrics()
+{
 	std::cout << "recall: " << metrics["recall"] << std::endl;
 	std::cout << "precision: " << metrics["precision"] << std::endl;
 	std::cout << "accuracy: " << metrics["accuracy"] << std::endl;
+	std::cout << "\n";
+}
+
+void MetricsContainer::print_class_metrics(int idx)
+{
+	if (idx == -1)
+	{
+		int n = recalls.size();
+		for (int i = 0; i < n; ++i)
+		{
+			std::cout << "recall for " << i << ": " << recalls[i] << std::endl;
+			std::cout << "precision for " << i << ": " << precisions[i] << std::endl;
+			std::cout << "accuracy for " << i << ": " << accuracies[i] << std::endl;
+			std::cout << "\n";
+		}
+	}
+	else
+	{
+		std::cout << "recall for " << idx <<":" << recalls[idx] << std::endl;
+		std::cout << "precision for " << idx << ":" << precisions[idx] << std::endl;
+		std::cout << "accuracy for " << idx << ":" << accuracies[idx] << std::endl;
+		std::cout << "\n";
+	}
 }
 
 void calc_cm(torch::Tensor &labels, torch::Tensor &logits, MetricsContainer &mc)

@@ -36,12 +36,12 @@ class ModelWrapper
 
 		void save_weights(std::string path);
 		void load_weights(std::string path);
-		void print_layers();
+		void print_layers() const;
 		void train();
 		void eval();
 		void to(torch::Device dev, bool non_blocking = false);
-		std::vector<torch::Tensor> parameters(bool recurse = true);
-		std::string get_name();
+		std::vector<torch::Tensor> parameters(bool recurse = true) const;
+		std::string get_name() const;
 		
 		torch::Tensor forward(torch::Tensor);
 		/*

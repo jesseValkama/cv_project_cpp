@@ -5,25 +5,29 @@
 #include <opencv2/imgproc.hpp>
 
 #include <stdint.h>
+#include <utility>
 
 #include "../datasets/loader_funcs.h"
+#include "../settings.h"
 
-int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, double prob, cv::ColormapTypes type)
+int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, double prob, DatasetOpts datasetOpts, cv::ColormapTypes type)
 {
+	tfm.mul_(255);
 	if (tfm.dim() == 2) { tfm.unsqueeze_(0); }
 	std::optional<cv::Mat> fm = Tensor2mat(tfm, -1, false, std::make_pair(std::vector<double>{}, std::vector<double>{}));
 	if (!fm.has_value()) { return 1; }
-	std::optional<cv::Mat> inputImg = Tensor2mat(tInputImg, 0);
+	std::optional<cv::Mat> inputImg = Tensor2mat(tInputImg, 0, false, std::make_pair(datasetOpts.mean, datasetOpts.stdev));
 	if (!inputImg.has_value()) { return 1; }
-	cv::cvtColor(inputImg.value(), inputImg.value(), cv::COLOR_GRAY2BGR);
+	cv::ColorConversionCodes colourConv = (datasetOpts.numOfChannels == 3) ? cv::COLOR_BGR2RGB : cv::COLOR_GRAY2BGR;
+	cv::cvtColor(*inputImg, *inputImg, colourConv);
 	
 	cv::Mat cm;
-	cv::applyColorMap(fm.value(), cm, type);
-	if (inputImg.value().size() != cm.size())
+	cv::applyColorMap(*fm, cm, type);
+	if ((*inputImg).size() != cm.size())
 	{
-		cv::resize(cm, cm, cv::Size(inputImg.value().size()));
+		cv::resize(cm, cm, cv::Size((*inputImg).size()));
 	}
-	cv::addWeighted(inputImg.value(), 0.4, cm, 0.6, 0.0, cm);
+	cv::addWeighted(*inputImg, 0.6, cm, 0.4, 0.0, cm);
 
 	cv::resize(cm, cm, cv::Size(500, 500));
 

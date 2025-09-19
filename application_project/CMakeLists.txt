@@ -1,4 +1,5 @@
 ﻿add_executable (application_project "application_project.cpp" "application_project.h"
+                                    "augmentations/geometry.cpp"
                                     "datasets/loader_funcs.cpp" "datasets/mnist.cpp"
                                     "datasets/cifar10.cpp" "datasets/data_helper.cpp"
                                     "settings.cpp"

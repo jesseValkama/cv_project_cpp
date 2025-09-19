@@ -41,7 +41,7 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes 
 	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts, true);
 	std::string fModel = train ? mnistOpts.workModel : mnistOpts.inferenceModel;
 	modelWrapper->load_weights(fModel);
-	modelWrapper->to(opts.dev, true);
+	modelWrapper->to(opts.dev);
 	modelWrapper->eval();
 	int64_t l = 0;
 	double p = 0.0;
@@ -54,10 +54,16 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes 
 	//torch::NoGradGuard no_grad;
 	for (int i = 0; i < n; ++i)
 	{
-		std::optional<cv::Mat> img = load_png_greyscale_img(fImgs[i], mnistOpts.imgresz);
+		std::optional<cv::Mat> img = load_png(fImgs[i], mnistOpts.numOfChannels, mnistOpts.imgresz);
 		if (!img.has_value()) { return 1; }
-		torch::Tensor timg = greyscale2Tensor(img.value(), mnistOpts.imgresz);
-		timg = timg.to(opts.dev).unsqueeze_(0);
+		bool toRGB = (mnistOpts.numOfChannels == 3) ? true : false;
+		torch::Tensor timg = mat2Tensor(*img, mnistOpts.imgresz, mnistOpts.numOfChannels, 255, toRGB);
+		z_scale_Tensor(timg, std::pair<std::vector<double>, std::vector<double>>{mnistOpts.mean, mnistOpts.stdev});
+		if (mnistOpts.async)
+		{
+			timg = timg.pin_memory();
+		}
+		timg = timg.to(opts.dev, mnistOpts.async).unsqueeze_(0);
 
 		torch::Tensor logits = modelWrapper->forward(timg);
 		logits = logits.to(torch::kFloat64);
@@ -81,12 +87,12 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes 
 
 		if (XAI == -1)
 		{
-			ret = gradcam(logits[0][xi], tfm.value(), timg, l, p);
+			ret = gradcam(logits[0][xi], tfm.value(), timg, l, p, mnistOpts);
 			if (ret != 0) { return ret; }
 		}
 		else
 		{
-			ret = visualise_fm(tfm.value(), timg, l, p, cv::COLORMAP_DEEPGREEN);
+			ret = visualise_fm(tfm.value(), timg, l, p, mnistOpts, cv::COLORMAP_DEEPGREEN);
 			if (ret != 0) { return ret; }
 		}
 	}

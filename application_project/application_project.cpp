@@ -20,10 +20,9 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	* 
+	* implement a scheduler
+	* fix gradcam / fm vis (normalisations + hooks)
 	* IMPLEMENT AMP!!
-	* implement z-scaling for inference
-	* fix gradcam to be before relu (+ implement hooks?)
-	* optimise reading cifar10
 	* 
 	* complete readme
 	* add unit tests (does googletest even work with libtorch?)

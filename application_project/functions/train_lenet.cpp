@@ -35,8 +35,9 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	// auto should be justified, since the datatypes are selfexplenatory and really long to typedef
 	// edit: i really should have used Python
 	// this is terrible code having almost similar fns but libtorch uses unique ptrs and the inputs come from the cli
-
-	auto [trainInfo, valInfo, testInfo] = load_dataset_info(datasetType, opts.mnistOpts);
+	
+	std::vector<int> tidxs, vidxs;
+	auto [trainInfo, valInfo, testInfo] = load_dataset_info(datasetType, opts.mnistOpts, tidxs, vidxs);
 	int ret = 0;
 	switch (datasetType)
 	{
@@ -48,7 +49,7 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 		}
 		case DatasetTypes::Cifar10Type:
 		{
-			ret = cifar10_loop(opts, modelType, trainInfo, valInfo, testInfo, train, test);
+			ret = cifar10_loop(opts, modelType, trainInfo, valInfo, testInfo, tidxs, vidxs, train, test);
 			if (ret != 0) { return ret; }
 			break;
 		}
@@ -60,7 +61,7 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	return 0;
 }
 
-int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train, bool test)
+int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, bool train, bool test)
 {
 	std::cout << ANSI_MAGENTA << "Starting to load Mnist dataset" << ANSI_END << std::endl;
 
@@ -107,13 +108,13 @@ int mnist_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const
 	return 0;
 }
 
-int cifar10_loop(Settings &opts, ModelTypes modelType, const Info trainInfo, const Info valInfo, const Info testInfo, bool train, bool test)
+int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, bool train, bool test)
 {
 	std::cout << ANSI_MAGENTA << "Starting to load the Cifar10 dataset" << ANSI_END << std::endl;
 
 	DatasetOpts datasetOpts = opts.mnistOpts;
 	int status = 0;
-	auto [trainset, valset, testset] = make_cifar10_datasets(datasetOpts, trainInfo, valInfo, testInfo);
+	auto [trainset, valset, testset] = make_cifar10_datasets(datasetOpts, trainInfo, valInfo, testInfo, tidxs, vidxs);
 
 	auto trainloader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>
 	(
@@ -161,14 +162,13 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	
 	std::shared_ptr<ModelWrapper> modelWrapper = std::make_shared<ModelWrapper>(modelType, mnistOpts);
-	modelWrapper->to(opts.dev, true);
-	modelWrapper->print_layers();
+	modelWrapper->to(opts.dev);
 
 	torch::optim::Adam optimiser(modelWrapper->parameters(), torch::optim::AdamOptions(opts.learningRate).weight_decay(opts.weightDecay));
 	torch::nn::CrossEntropyLoss lossFn;
 
 	int ret = 0;
-	float bestValLoss = std::numeric_limits<float>::infinity();
+	double bestValLoss = std::numeric_limits<double>::infinity();
 	bool valImprov = false;
 	bool stop = false;
 	size_t dec = 0;
@@ -179,18 +179,18 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 		std::cout << ANSI_GREEN << "Epoch: " << epoch << ANSI_END << std::endl;
 		modelWrapper->train();
 
-		float trainLoss = 0.0;
+		double trainLoss = 0.0;
 		int i = 0;
 		for (Batch &batch : trainloader)
 		{
 			optimiser.zero_grad();
 
-			torch::Tensor imgs = batch.data.to(opts.dev, true);
-			torch::Tensor labels = batch.target.to(opts.dev, true).view({ -1 });
+			torch::Tensor imgs = batch.data.to(opts.dev, mnistOpts.async);
+			torch::Tensor labels = batch.target.to(opts.dev, mnistOpts.async).view({ -1 });
 
 			torch::Tensor outputs = modelWrapper->forward(imgs);
 			torch::Tensor loss = lossFn(outputs, labels);
-			if (std::isnan(loss.template item<float>()))
+			if (std::isnan(loss.template item<double>()))
 			{
 				std::cout << ANSI_RED << "Training is unstable, change settings" << ANSI_END << std::endl;
 				return 1;
@@ -198,10 +198,9 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 			loss.backward();
 			optimiser.step();
 
-			trainLoss += loss.item<float>();
+			trainLoss += loss.item<double>();
 			i++;
 		}
-
 		trainLoss /= i;
 
 		// TODO: visualise the train loss with opencv
@@ -227,28 +226,28 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 }
 
 template<typename Sequentialloader>
-int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, float &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, double &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	modelWrapper->eval();
 	int i = 0;
-	float valLoss = 0.0;
+	double valLoss = 0.0;
 	
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : valloader)
 	{
-		torch::Tensor imgs = batch.data.to(opts.dev, true);
-		torch::Tensor labels = batch.target.to(opts.dev, true).view({-1});
+		torch::Tensor imgs = batch.data.to(opts.dev, mnistOpts.async);
+		torch::Tensor labels = batch.target.to(opts.dev, mnistOpts.async).view({-1});
 
 		torch::Tensor outputs = modelWrapper->forward(imgs);
 		torch::Tensor loss = lossFn(outputs, labels);
-		if (std::isnan(loss.template item<float>()))
+		if (std::isnan(loss.template item<double>()))
 		{
 			std::cout << ANSI_RED << "Validation is unstable, change parameters" << ANSI_END << std::endl;
 			return 1;
 		}
 		i++;
-		valLoss += loss.item<float>();
+		valLoss += loss.item<double>();
 	}
 	valLoss /= i;
 	
@@ -277,21 +276,22 @@ int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelTyp
 
 	std::string fModel = train ? mnistOpts.workModel : mnistOpts.testModel;
 	modelWrapper->load_weights(fModel);
-	modelWrapper->to(opts.dev, true);
+	modelWrapper->to(opts.dev);
 	modelWrapper->eval();
 	MetricsContainer mc(mnistOpts.numOfClasses);
 
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : testloader)
 	{
-		torch::Tensor imgs = batch.data.to(opts.dev, true);
-		torch::Tensor labels = batch.target.to(opts.dev, true).view({ -1 });
+		torch::Tensor imgs = batch.data.to(opts.dev, mnistOpts.async);
+		torch::Tensor labels = batch.target.to(opts.dev, mnistOpts.async).view({ -1 });
 		torch::Tensor outputs = modelWrapper->forward(imgs);
 		calc_cm(labels, outputs, mc);
 	}
 	mc.print_cm();
 	mc.calc_metrics();
 	mc.print_metrics();
+	mc.print_metrics(-2);
 
 	std::string ans;
 	std::cout << "Would you like to save the model?\nType name.pth to save the model, skip by not writing in the correct format" << std::endl;

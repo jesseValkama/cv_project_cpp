@@ -151,7 +151,6 @@ int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, co
 			return status;
 		}
 	}
-	
 	return 0;
 }
 
@@ -165,10 +164,12 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 	modelWrapper->to(opts.dev);
 
 	torch::optim::Adam optimiser(modelWrapper->parameters(), torch::optim::AdamOptions(opts.learningRate).weight_decay(opts.weightDecay));
+	torch::optim::ReduceLROnPlateauScheduler plateau(optimiser, torch::optim::ReduceLROnPlateauScheduler::SchedulerMode::min, 0.1, opts.schedulerWait);
 	torch::nn::CrossEntropyLoss lossFn;
 
 	int ret = 0;
 	double bestValLoss = std::numeric_limits<double>::infinity();
+	double valLoss = 0.0;
 	bool valImprov = false;
 	bool stop = false;
 	size_t dec = 0;
@@ -206,9 +207,10 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 		// TODO: visualise the train loss with opencv
 		std::cout << ANSI_MAGENTA << "Train loss: " << trainLoss << ANSI_END << std::endl;
 
+		valLoss = 0.0;
 		if (epoch % opts.valInterval == 0)
 		{
-			ret = lenet_val(modelWrapper, valloader, bestValLoss, lossFn, valImprov, opts);
+			ret = lenet_val(modelWrapper, valloader, bestValLoss, valLoss, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
 				std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
@@ -220,18 +222,18 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 				return 0;
 			}
 		}
+		plateau.step(valLoss);
 	}
 	
 	return 0;
 }
 
 template<typename Sequentialloader>
-int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, double &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, double &bestValLoss, double &valLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	modelWrapper->eval();
 	int i = 0;
-	double valLoss = 0.0;
 	
 	torch::NoGradGuard no_grad;
 	for (Batch &batch : valloader)

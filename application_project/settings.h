@@ -51,6 +51,7 @@ struct DatasetOpts
 	size_t numWorkers = 0;
 	bool async = false;
 	int64_t numOfClasses = 0;
+	std::vector<std::string> labels = {};
 	int64_t numOfChannels = 0;
 	
 	std::vector<double> mean = {};
@@ -72,7 +73,8 @@ struct Settings
 	size_t valInterval = 0;
 	float learningRate = 0.0;
 	float weightDecay = 0.0;
-	size_t IntervalsBeforeEarlyStopping = 1; // unnecessary for lenet, but could be useful for a more complex model
+	size_t IntervalsBeforeEarlyStopping = 0; // unnecessary for lenet, but could be useful for a more complex model
+	int schedulerWait = 0;
 	bool automatedMixedPrecision = false; // NOT IN USE YET
 
 	Settings(DatasetTypes datasetType, ModelTypes modelType);

@@ -53,7 +53,7 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 */
 
 template<typename Sequentialloader>
-int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, double &bestValLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
+int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, double &bestValLoss, double &valLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 

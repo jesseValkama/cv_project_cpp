@@ -49,6 +49,7 @@ void DatasetOpts::assign_from_mnist(ModelTypes modelType, YAML::Node &yaml)
 	numWorkers = yaml["mnist_train_settings"]["multiprocessing"]["num_workers"].as<size_t>();
 	async = yaml["mnist_train_settings"]["multiprocessing"]["async"].as<bool>();
 	numOfClasses = yaml["mnist_train_settings"]["dataset_info"]["num_classes"].as<int64_t>();
+	labels = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 	numOfChannels = yaml["mnist_train_settings"]["dataset_info"]["num_channels"].as<int64_t>();
 	
 	YAML::Node means = yaml["mnist_train_settings"]["dataset_info"]["mean"];
@@ -103,6 +104,7 @@ void DatasetOpts::assign_from_cifar10(ModelTypes modelType, YAML::Node &yaml)
 	numWorkers = yaml["cifar10_train_settings"]["multiprocessing"]["num_workers"].as<size_t>();
 	async = yaml["cifar10_train_settings"]["multiprocessing"]["async"].as<bool>();
 	numOfClasses = yaml["cifar10_train_settings"]["dataset_info"]["num_classes"].as<int64_t>();
+	labels = { "airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck" };
 	numOfChannels = yaml["cifar10_train_settings"]["dataset_info"]["num_channels"].as<int64_t>();
 	
 	YAML::Node means = yaml["cifar10_train_settings"]["dataset_info"]["mean"];
@@ -125,6 +127,8 @@ Settings::Settings(DatasetTypes datasetType, ModelTypes modelType)
 	learningRate = yaml["general_settings"]["optimiser"]["learning_rate"].as<float>();
 	weightDecay = yaml["general_settings"]["optimiser"]["weight_decay"].as<float>();
 	IntervalsBeforeEarlyStopping = yaml["general_settings"]["loop"]["early_stop_counter"].as<size_t>();
+	schedulerWait = yaml["general_settings"]["optimiser"]["plateau_scheduler_activation_delay"].as<int>();
+
 	automatedMixedPrecision = yaml["general_settings"]["loop"]["amp"].as<bool>(); // NOT IN USE YET
 
 	DatasetOpts datasetOpts(yaml, modelType, datasetType);

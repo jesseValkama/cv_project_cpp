@@ -8,10 +8,14 @@
 #include <stdint.h>
 #include "../settings.h"
 
-int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, double prob, DatasetOpts datasetOpts, cv::ColormapTypes type = cv::COLORMAP_JET);
+int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, double prob, DatasetOpts datasetOpts, cv::ColormapTypes type = cv::COLORMAP_JET, float imgWeight = 0.5);
 /*
 * Used to visualise a feature map with opencv
 * Requires an existing window with the name of fmvis (which it doesn't destroy)
+* 
+* Credit:
+*	some of the denormalisations are inspired by the show_cam_on_image function from the pytroch-grad-cam package
+*	https://github.com/jacobgil/pytorch-grad-cam?tab=readme-ov-file
 * 
 * Args:
 *	tfm: feature map as a tensor
@@ -20,6 +24,7 @@ int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, do
 *	prob: the probability for the prediction
 *	datasetOpts: settings for the dataset
 *	type: which colormap to use, see https://docs.opencv.org/4.x/d3/d50/group__imgproc__colormap.html#ga9a805d8262bcbe273f16be9ea2055a65
+*	imgWeight: the percentage for the input image (colour map is 1 - imgWeight)
 * 
 * Returns:
 *	0: successful

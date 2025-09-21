@@ -197,17 +197,17 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1, bool toR
 *	Tensor: the output img
 */
 
-std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {}, {} });
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {}, {} }, float imgMax = 255.0f);
 /*
 * Loads a tensor to a cv::Mat.
-* Denormalisation is also possible, default z-scaling values are for mnist,
-* and use -1 on both to skip
+* Denormalisation is also possible, default scale and imgMax values skip dernomalisation
 * 
 * Args:
 *	timg: img as a tensor
 *	squeeze: the index to squeeze from -1 to skip 
 *	toBGR: whether to transform from rgb2bgr or not
 *	scale: 1st mean and 2nd standard deviation for z-scaling
+*	imgMax: the max value for a pixel (needs to be <= 255), used in denormalising the image
 * 
 * Returns:
 *	img: output cv::Mat

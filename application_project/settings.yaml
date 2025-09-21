@@ -86,11 +86,13 @@ lenet_imgresz: 32
 dev: false # set in the actual functions/settings.h file
 general_settings:
   loop:
-    min_epochs: 15
-    max_epochs: 20
+    min_epochs: 40
+    max_epochs: 60
     validation_interval: 1 # epoch % x == 0 ? validate : not
     early_stop_counter: 2 # not improved in a row to trigger early stop
     amp: false # not implemented yet
   optimiser:
     learning_rate: 0.001
     weight_decay: 0.0
+    plateau_scheduler_activation_delay: 10 # epochs
+    cosine_scheduler_activation_delay: 30 # epochs (this disables the plateau scheduler) NOT IMPLEMENTED YET

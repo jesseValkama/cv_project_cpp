@@ -8,7 +8,8 @@
                                     "metrics/classification_metrics.cpp"
                                     "functions/common.cpp" "functions/train_lenet.cpp"
                                     "functions/inference.cpp" "functions/handle_args.cpp"
-                                    "functions/gradcam.cpp" "functions/visualise.cpp" 
+                                    "functions/gradcam.cpp" "functions/visualise.cpp"
+                                    "optims/schedulers.cpp"
 )
 
 include(FetchContent)

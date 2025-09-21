@@ -20,8 +20,8 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	* 
-	* implement a scheduler
-	* fix gradcam / fm vis (normalisations + hooks)
+	* implement warmup, adamW
+	* implement saving for optimiser + scheduler 
 	* IMPLEMENT AMP!!
 	* 
 	* complete readme
@@ -32,12 +32,12 @@ int main(int argc, char *argv[])
 	if (!args.has_value()) { return 1; }
 	
 	// todo: make fn for these with erro handling in handle_args with a tuple
-	bool train = (*args).at("train") == 1 ? true : false;
-	bool test = (*args).at("test") == 1 ? true : false;
-	bool inference = (*args).at("inference") == 1 ? true : false;
-	ModelTypes modelType = static_cast<ModelTypes>((*args).at("model"));
-	int16_t XAI = (*args).at("xai");
-	DatasetTypes datasetType = static_cast<DatasetTypes>((*args).at("dataset"));
+	bool train = args->at("train") == 1 ? true : false;
+	bool test = args->at("test") == 1 ? true : false;
+	bool inference = args->at("inference") == 1 ? true : false;
+	ModelTypes modelType = static_cast<ModelTypes>(args->at("model"));
+	int16_t XAI = args->at("xai");
+	DatasetTypes datasetType = static_cast<DatasetTypes>(args->at("dataset"));
 
 	Settings opts(datasetType, modelType);
 	int ret = 0;

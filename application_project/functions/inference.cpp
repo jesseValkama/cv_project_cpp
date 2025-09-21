@@ -51,7 +51,6 @@ int lenet_inference(std::vector<std::string> &fImgs, Settings &opts, ModelTypes 
 	int n = fImgs.size();
 
 	std::cout << "Starting inference for " + modelWrapper->get_name() << std::endl;
-	//torch::NoGradGuard no_grad;
 	for (int i = 0; i < n; ++i)
 	{
 		std::optional<cv::Mat> img = load_png(fImgs[i], mnistOpts.numOfChannels, mnistOpts.imgresz);

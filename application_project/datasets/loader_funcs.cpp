@@ -334,8 +334,9 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div, bool toRGB)
 	return timg;
 }
 
-std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, bool toBGR, std::pair<std::vector<double>, std::vector<double>> scale)
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, bool toBGR, std::pair<std::vector<double>, std::vector<double>> scale, float imgMax)
 {
+	assert(imgMax <= 255);
 	timg = timg.detach().cpu();
 	if (squeeze != -1) { timg.squeeze_(squeeze); }
 	if (!scale.first.empty() && !scale.second.empty())
@@ -343,7 +344,7 @@ std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze, bool toBGR, s
 		torch::Tensor tmean = torch::tensor(scale.first).view({ -1, 1, 1 });
 		torch::Tensor tstdev = torch::tensor(scale.second).view({ -1, 1, 1 });
 		timg.mul_(tstdev).add_(tmean)
-			.mul_(255);
+			.mul_(imgMax);
 	}
 	timg.clamp_(0, 255);
 	timg = timg.to(torch::kUInt8);

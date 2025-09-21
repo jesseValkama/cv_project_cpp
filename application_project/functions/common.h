@@ -12,7 +12,7 @@ bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp);
 	*
 	* Args:
 	*	mem: the amount of validations without improvements in a row before early stopping
-	*	wait: the amount of epochs to wait before activating activating function (at the end there will be 0 failed improvements stored)
+	*	wait: the amount of epochs to wait before activating activating function, does still count the fails in a row
 	*	epoch: the current epoch
 	*	imp: whether the model improved last epoch
 	* 

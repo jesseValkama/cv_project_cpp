@@ -20,8 +20,7 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	* 
-	* implement warmup, adamW
-	* implement saving for optimiser + scheduler 
+	* implement warmup, lion and cosine decay 
 	* IMPLEMENT AMP!!
 	* 
 	* complete readme

@@ -44,9 +44,10 @@ int visualise_fm(torch::Tensor &tfm, torch::Tensor &tInputImg, int64_t label, do
 	cv::minMaxLoc(cm.reshape(1), NULL, &max, NULL, NULL);
 	cm = cm / static_cast<float>(max) * 255.0f;
 	cm.convertTo(cm, CV_8U);
+	int fProb = static_cast<int>(prob * 100);
 
 	cv::resize(cm, cm, cv::Size(500, 500));
-	std::string labelText = "Prediction: " + datasetOpts.labels[label]; +" with the probability of: " + std::to_string(prob);
+	std::string labelText = "Prediction: " + datasetOpts.labels[label] + " with the probability of: " + std::to_string(fProb) + "%";
 	cv::putText(cm, labelText, cv::Point(30, 30), cv::FONT_HERSHEY_TRIPLEX, 0.5, cv::Scalar(255,0,255), 2, cv::LINE_AA);
 	cv::imshow("fmvis", cm);
 	cv::waitKey(0);

@@ -1,10 +1,10 @@
 # CV application project (still in progress)
 
-A simple LeNet MNIST classification project with cpp (to "prove" my cpp skills).
+A simple ResNet classification project with cpp. This is my first cpp project, so be warned.
 
 ## Description
 
-This project includes a custom training loop for lenet. The testing includes metrics
+This project includes a custom training loop for ResNet and Lenet. The testing includes metrics
 such as recall, precision and accuracy with a confusion matrix. In addition, the
 inference supports png images (I made mine in paint). Inference also supports
 feature map visualisations either by index or gradcam.
@@ -33,7 +33,7 @@ but no alternatives are tested.
 
 ### Installing
 
-First you need to install the packages (and dataset?). In addition, you need to install the correct
+First you need to install the packages (and datasets?). In addition, you need to install the correct
 versions of compilers builders and IDEs.
 
 ### Executing program
@@ -65,7 +65,9 @@ inference: 0 || 1
 
 xai: -2 (skip), -1 (gradcam), 0-n feature map index
 
-model: 0 (LeNet), 1 (ResNet)
+model: 1 (LeNet), 2 (ResNet)
+
+dataset: 1 (mnist), 2 (cifar10)
 
 
 ## Help
@@ -88,3 +90,11 @@ from stackoverflow can be found in the .h files.
 * [Libtorch tutorial code snippets](https://github.com/pytorch/examples/tree/main/cpp)
 * [Tutorial videos for cpp](https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb)
 * [Template for this readme](https://gist.github.com/DomPizzie/7a5ff55ffa9081f2de27c315f5018afc)
+
+## References
+
+Credits to the following research papers.
+* [Cifar10](https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf)
+* [Gradcam](https://arxiv.org/abs/1610.02391)
+* [LeNet & minst](https://arxiv.org/abs/1610.02391)
+* [Resnet](https://arxiv.org/abs/1512.03385)

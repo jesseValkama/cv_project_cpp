@@ -38,5 +38,6 @@ Thumbs.db
 # TODO
 /application_project/augmentations/colour.cpp
 /application_project/augmentations/colour.h
-/application_project/optims
+/application_project/optims/lion.cpp
+/application_project/optims/lion.h
 /application_project/cifar10_inference

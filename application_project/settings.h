@@ -74,8 +74,10 @@ struct Settings
 	float learningRate = 0.0;
 	float weightDecay = 0.0;
 	size_t IntervalsBeforeEarlyStopping = 0; // unnecessary for lenet, but could be useful for a more complex model
-	int schedulerWait = 0;
 	bool automatedMixedPrecision = false; // NOT IN USE YET
+
+	int warmupLen = 0;
+	int plateauWait = 0;
 
 	Settings(DatasetTypes datasetType, ModelTypes modelType);
 };

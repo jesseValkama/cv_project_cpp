@@ -19,6 +19,7 @@
 #include "../metrics/classification_metrics.h"
 #include "../models/model_wrapper.h"
 #include "../settings.h"
+#include "../optims/scheds/warmup.h"
 #include "common.h"
 
 constexpr const char *ANSI_END = "\033[0m";
@@ -84,10 +85,11 @@ int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, cons
 		std::move(testset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.testBS).workers(datasetOpts.numWorkers)
 	);
+	const size_t trainSize = trainset.size().value();
 
 	if (train)
 	{
-		status = lenet_train(*trainloader, *valloader, opts, modelType);
+		status = lenet_train(*trainloader, *valloader, trainSize, opts, modelType);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
@@ -131,10 +133,11 @@ int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, co
 		std::move(testset),
 		torch::data::DataLoaderOptions().batch_size(datasetOpts.testBS).workers(datasetOpts.numWorkers)
 	);
+	int trainSize = trainset.size().value();
 
 	if (train)
 	{
-		status = lenet_train(*trainloader, *valloader, opts, modelType);
+		status = lenet_train(*trainloader, *valloader, trainSize, opts, modelType);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
@@ -156,15 +159,16 @@ int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, co
 
 
 template<typename Randomloader, typename Sequentialloader>
-int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings &opts, ModelTypes modelType)
+int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, const size_t trainSize, Settings &opts, ModelTypes modelType)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	
 	std::shared_ptr<ModelWrapper> modelWrapper = std::make_shared<ModelWrapper>(modelType, mnistOpts);
 	modelWrapper->to(opts.dev);
 
-	torch::optim::Adam optimiser(modelWrapper->parameters(), torch::optim::AdamOptions(opts.learningRate).weight_decay(opts.weightDecay));
-	torch::optim::ReduceLROnPlateauScheduler plateau(optimiser, torch::optim::ReduceLROnPlateauScheduler::SchedulerMode::min, 0.1, opts.schedulerWait);
+	torch::optim::AdamW optimiser(modelWrapper->parameters(), torch::optim::AdamWOptions(opts.learningRate).weight_decay(opts.weightDecay));
+	torch::optim::ReduceLROnPlateauScheduler plateau(optimiser, torch::optim::ReduceLROnPlateauScheduler::SchedulerMode::min, 0.1, opts.plateauWait);
+	optims::sched::warmupLR warmup(optimiser, opts.learningRate, opts.warmupLen * trainSize / mnistOpts.trainBS);
 	torch::nn::CrossEntropyLoss lossFn;
 
 	int ret = 0;
@@ -201,6 +205,7 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings
 
 			trainLoss += loss.item<double>();
 			i++;
+			warmup.step();
 		}
 		trainLoss /= i;
 

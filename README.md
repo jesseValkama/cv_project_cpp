@@ -1,4 +1,4 @@
-# CV application project (still in progress)
+# CV application project (currenty at a break due to school)
 
 A simple ResNet classification project with cpp. This is my first cpp project, so be warned.
 
@@ -6,7 +6,7 @@ A simple ResNet classification project with cpp. This is my first cpp project, s
 
 This project includes a custom training loop for ResNet and Lenet. The testing includes metrics
 such as recall, precision and accuracy with a confusion matrix. In addition, the
-inference supports png images (I made mine in paint). Inference also supports
+inference supports png images (I made mine in paint for mnist, use your own for cifar10). Inference also supports
 feature map visualisations either by index or gradcam.
 
 ## Getting Started

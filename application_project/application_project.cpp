@@ -20,9 +20,7 @@ int main(int argc, char *argv[])
 	/*
 	* todo:
 	* 
-	* implement warmup, lion and cosine decay 
 	* IMPLEMENT AMP!!
-	* 
 	* complete readme
 	* add unit tests (does googletest even work with libtorch?)
 	*/

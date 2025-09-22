@@ -9,7 +9,7 @@
                                     "functions/common.cpp" "functions/train_lenet.cpp"
                                     "functions/inference.cpp" "functions/handle_args.cpp"
                                     "functions/gradcam.cpp" "functions/visualise.cpp"
-                                    "optims/schedulers.cpp"
+                                    "optims/scheds/warmup.cpp"
 )
 
 include(FetchContent)

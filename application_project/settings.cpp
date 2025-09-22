@@ -127,7 +127,9 @@ Settings::Settings(DatasetTypes datasetType, ModelTypes modelType)
 	learningRate = yaml["general_settings"]["optimiser"]["learning_rate"].as<float>();
 	weightDecay = yaml["general_settings"]["optimiser"]["weight_decay"].as<float>();
 	IntervalsBeforeEarlyStopping = yaml["general_settings"]["loop"]["early_stop_counter"].as<size_t>();
-	schedulerWait = yaml["general_settings"]["optimiser"]["plateau_scheduler_activation_delay"].as<int>();
+
+	warmupLen = yaml["general_settings"]["optimiser"]["warmup_length"].as<int>();
+	plateauWait = yaml["general_settings"]["optimiser"]["plateau_scheduler_activation_delay"].as<int>();
 
 	automatedMixedPrecision = yaml["general_settings"]["loop"]["amp"].as<bool>(); // NOT IN USE YET
 

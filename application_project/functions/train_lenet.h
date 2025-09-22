@@ -38,14 +38,16 @@ int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, cons
 int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, bool train = false, bool test = false);
 
 template<typename Randomloader, typename Sequentialloader>
-int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, Settings &opts, ModelTypes modelType);
+int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, const size_t trainSize, Settings &opts, ModelTypes modelType);
 /*
 	* The function to train LeNet
 	* 
 	* Args:
 	*	trainloader: then dataloader for training
 	*	valloader: the dataloader for validation (passed to lenet_val)
-	*	opts: options for training
+	*	trainSize: the size of the trainset
+	*	opts: options for training]
+	*	modelType: the type of the model
 	* 
 	* Returns:
 	*	0: successful

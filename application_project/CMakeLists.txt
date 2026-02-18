@@ -1,15 +1,17 @@
-﻿add_executable (application_project "application_project.cpp" "application_project.h"
-                                    "augmentations/geometry.cpp"
-                                    "datasets/loader_funcs.cpp" "datasets/mnist.cpp"
-                                    "datasets/cifar10.cpp" "datasets/data_helper.cpp"
-                                    "settings.cpp"
-                                    "models/common.cpp" "models/model_wrapper.cpp"
-                                    "models/lenet.cpp" "models/resnet.cpp"
-                                    "metrics/classification_metrics.cpp"
-                                    "functions/common.cpp" "functions/train_lenet.cpp"
-                                    "functions/inference.cpp" "functions/handle_args.cpp"
-                                    "functions/gradcam.cpp" "functions/visualise.cpp"
-                                    "optims/scheds/warmup.cpp"
+﻿add_executable (application_project "application_project.cpp"
+                                    "src/augmentations/geometry.cpp"
+                                    "src/datasets/loader_funcs.cpp" "src/datasets/mnist.cpp"
+                                    "src/datasets/cifar10.cpp" "src/datasets/data_helper.cpp"
+                                    "src/settings.cpp"
+                                    "src/models/common.cpp" "src/models/model_wrapper.cpp"
+                                    "src/models/lenet.cpp" "src/models/resnet.cpp"
+                                    "src/metrics/classification_metrics.cpp"
+                                    "src/functions/common.cpp" "src/functions/database.cpp"
+                                    "src/functions/train_lenet.cpp"
+                                    "src/functions/inference.cpp" "src/functions/handle_args.cpp"
+                                    "src/functions/gradcam.cpp" "src/functions/visualise.cpp"
+                                    "src/optims/scheds/warmup.cpp"
+                                    "src/plots/plots.cpp"
 )
 
 include(FetchContent)
@@ -21,14 +23,29 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(yaml-cpp)
 
 set(CMAKE_PREFIX_PATH "D:/cpptools/libtorch;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6;D:/cpptools/opencv/build")
+set(SQLITE3_ROOT "D:/cpptools/sqlite3")
 
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
 
-include_directories(
-    ${OPENCV_INCLUDE_DIRS}
+add_library(sqlite3 
+    STATIC ${SQLITE3_ROOT}/sqlite3.c
 )
-target_link_libraries(application_project PRIVATE "${TORCH_LIBRARIES}" PRIVATE ${OpenCV_LIBS} PUBLIC yaml-cpp::yaml-cpp)
+target_include_directories(sqlite3
+    PUBLIC ${SQLITE3_ROOT}
+)
+
+target_include_directories(application_project 
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${OPENCV_INCLUDE_DIRS}       
+)
+target_link_libraries(application_project 
+    PRIVATE "${TORCH_LIBRARIES}" 
+    PRIVATE ${OpenCV_LIBS} 
+    PUBLIC yaml-cpp::yaml-cpp
+    PRIVATE sqlite3
+)
 
 set_property(TARGET application_project PROPERTY CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

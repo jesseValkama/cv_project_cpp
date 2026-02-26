@@ -14,7 +14,8 @@
 #include "models/model_wrapper.h"
 
 #include <sqlite3.h>
-#include "functions/database.h"
+#include "database/database.h"
+#include "database/database_helpers/database_map.h"
 
 int main(int argc, char *argv[])
 {
@@ -46,8 +47,7 @@ int main(int argc, char *argv[])
 	ret = db::open(filename, &database);
 	if (ret != 0) { return ret; }
 	//ret = db::create_experiments(database);
-	DatabaseConstructor databaseConstructor = db::get_database_constructor("experiment5", "resnet", "time", 80, "filename", 90.0, 90.0, 90.0, "adamw", settings);
-	DatabaseMap databaseMap(std::move(databaseConstructor));
+	DatabaseMap databaseMap(db::get_database_constructor("experiment9", "resnet", "time.time", 80, "filename", 90.0, 90.0, 90.0, "adamw", settings));
 	ret = databaseMap.topoSort();
 	if (ret != 0) { return ret; }
 	ret = db::insert_experiments(database, databaseMap);

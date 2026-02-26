@@ -1,4 +1,4 @@
-#include "functions/database.h"
+#include "database/database.h"
 
 #include <cassert>
 #include <iostream>
@@ -11,6 +11,9 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include "database/database_helpers/param_info.h"
+#include "database/database_helpers/database_map.h"
 
 std::string make_attribute_list_template(const TableConstructor &tableConstructor, const bool usePlaceholder, const bool includeTypes) // todo: include types
 {
@@ -71,145 +74,28 @@ int bind_values(sqlite3_stmt *&statement, const ParamInfo &paramInfo, int &param
 	return ret;
 }
 
-/*
-* todo:
-* seperate files
-*/
-
-DatabaseIterator &DatabaseIterator::operator++()
-{
-	++this->orderIdx;
-	return *this;
-}
-
-DatabaseIterator &DatabaseIterator::operator--()
-{
-	--this->orderIdx;
-	return *this;
-}
-
-DatabaseIterator DatabaseIterator::operator++(int)
-{
-	DatabaseIterator iter = *this;
-	++(*this);
-	return iter;
-}
-
-DatabaseIterator DatabaseIterator::operator--(int)
-{
-	DatabaseIterator iter = *this;
-	++(*this);
-	return iter;
-}
-
-std::pair<std::string, TableConstructor> DatabaseIterator::operator*()
-{
-	std::string tableName = this->tableOrder[this->orderIdx];
-	return std::make_pair(tableName, this->databaseConstructor.at(tableName));
-}
-
-bool DatabaseIterator::operator==(const DatabaseIterator &other) const
-{
-	return this->orderIdx == tableOrder.size();
-}
-
-bool DatabaseIterator::operator!=(const DatabaseIterator &other) const
-{
-	return !(this->orderIdx == tableOrder.size());
-}
-
-DatabaseMap::DatabaseMap(DatabaseConstructor &&databaseConstructor)
-	:	databaseConstructor(std::move(databaseConstructor))
-{
-	for (auto &[tableName, params] : this->databaseConstructor)
-	{
-		this->adjacencyList.insert({ tableName, {} });
-	}
-	for (auto &[tableName, params] : this->databaseConstructor)
-	{
-		for (auto &[paramName, paramInfo] : params)
-		{
-			if (!paramInfo.foreignKey.has_value())
-			{
-				continue;
-			}
-			this->adjacencyList.at(paramInfo.foreignKey->referenceTable).push_back(tableName);
-		}
-	}
-}
-
-int DatabaseMap::topoSort(const bool verbose)
-{
-	std::unordered_map<std::string, int> indeg;
-	for (auto &[name, refs] : this->adjacencyList)
-	{
-		indeg.insert({name, 0});
-	}
-	for (auto &[name, refs] : this->adjacencyList)
-	{
-		for (auto &next : refs)
-		{
-			++indeg.at(next);
-		}
-	}
-	std::queue<std::string> q;
-	for (auto &[name, n] : indeg)
-	{
-		if (n == 0)
-		{
-			q.push(name);
-		}
-	}
-	while (!q.empty())
-	{
-		std::string top = q.front();
-		q.pop();
-		this->order.push_back(top);
-		for (std::string next : this->adjacencyList.at(top))
-		{
-			--indeg.at(next);
-			if (indeg.at(next) == 0)
-			{
-				q.push(next);
-			}
-		}
-	}
-	if (this->order.size() != this->adjacencyList.size())
-	{
-		if (verbose) { std::cout << "loop detected in the database hierarchy" << std::endl; }
-		return 1;
-	}
-	this->adjacencyList.clear();
-	return 0;
-}
-
-TableConstructor DatabaseMap::at(std::string table)
-{
-	return this->databaseConstructor.at(table);
-}
-
 // start of spaghetti code, fix references, combine functions, and add const
 
-QueryTemplateContainer::QueryTemplateContainer(DatabaseMap &databaseMap)
+QueryTemplateContainer::QueryTemplateContainer(const DatabaseMap &databaseMap)
 {
-	for (auto [tableName, tableInfo] : databaseMap)
+	for (const auto [tableName, tableInfo] : databaseMap) // needs &
 	{
 		this->queryTemplates[tableName];
 	}
 }
 
-void QueryTemplateContainer::make_create_templates(DatabaseMap &databaseMap)
+void QueryTemplateContainer::make_create_templates(const DatabaseMap &databaseMap)
 {
-	for (auto [tableName, tableInfo] : databaseMap)
+	for (const auto [tableName, tableInfo] : databaseMap)
 	{
 		std::string col = make_attribute_list_template(tableInfo);
 		this->queryTemplates.at(tableName) = "CREATE TABLE ? " + col + ";";
 	}
 }
 
-void QueryTemplateContainer::make_insert_templates(DatabaseMap &databaseMap)
+void QueryTemplateContainer::make_insert_templates(const DatabaseMap &databaseMap)
 {
-	for (auto [tableName, tableInfo] : databaseMap) // todo fix this
+	for (auto [tableName, tableInfo] : databaseMap)
 	{
 		std::string val = make_attribute_list_template(tableInfo, true);
 		std::string col = make_attribute_list_template(tableInfo);
@@ -280,8 +166,7 @@ int db::create_experiments(sqlite3 *database, const bool verbose)
 	return 0;
 }
 
-// fix const
-int db::insert_experiments(sqlite3 *database, DatabaseMap &databaseMap, const bool verbose) // todo: implement force foreign keys and transactions
+int db::insert_experiments(sqlite3 *database, const DatabaseMap &databaseMap, const bool verbose) // todo: implement force foreign keys and transactions
 {
 	if (!database)
 	{
@@ -292,12 +177,11 @@ int db::insert_experiments(sqlite3 *database, DatabaseMap &databaseMap, const bo
 	queryTemplateContainer.make_insert_templates(databaseMap);
 	int ret = 0;
 	int paramIdx = 1;
-	for (auto [tableName, tableInfo] : databaseMap) // const and reference
+	for (const auto [tableName, tableInfo] : databaseMap) // needs &
 	{
 		paramIdx = 1;
 		sqlite3_stmt *statement = nullptr;
 		std::string query = queryTemplateContainer.queryTemplates[tableName];
-		std::cout << query.c_str() << std::endl;
 		ret = sqlite3_prepare_v2(database, query.c_str(), -1, &statement, NULL);
 		if (ret != SQLITE_OK)
 		{
@@ -436,4 +320,3 @@ int exec(sqlite3 *database, const Queries query, const char *param, const bool v
 	ret = sqlite3_finalize(statement);
 	return ret;
 }
-

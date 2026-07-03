@@ -21,6 +21,7 @@
 #include "settings.h"
 #include "optims/scheds/warmup.h"
 #include "functions/common.h"
+#include "functions/experiments_database.h"
 
 constexpr const char *ANSI_END = "\033[0m";
 constexpr const char *ANSI_GREEN = "\033[32m";
@@ -30,13 +31,10 @@ constexpr const char *ANSI_YELLOW = "\033[33m";
 
 namespace nn = torch::nn;
 
-int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, bool train, bool test)
+int train::run_loop(Settings &opts, const ModelTypes modelType, const DatasetTypes datasetType, 
+	const bool trainModel, const bool testModel)
 {
-	// a custom dataset is a bit pointless, but it is used as "proof of concept" or if pose is ready, it is useful there
-	// auto should be justified, since the datatypes are selfexplenatory and really long to typedef
-	// edit: i really should have used Python
-	// this is terrible code having almost similar fns but libtorch uses unique ptrs and the inputs come from the cli
-	
+	train::Tracker tracker = train::Tracker();
 	std::vector<int> tidxs, vidxs;
 	auto [trainInfo, valInfo, testInfo] = load_dataset_info(datasetType, opts.mnistOpts, tidxs, vidxs);
 	int ret = 0;
@@ -44,28 +42,31 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	{
 		case DatasetTypes::MnistType:
 		{
-			ret = mnist_loop(opts, modelType, trainInfo, valInfo, testInfo, train, test);
+			ret = mnist_helper(opts, modelType, trainInfo, valInfo, testInfo, tracker, trainModel, testModel);
 			if (ret != 0) { return ret; }
 			break;
 		}
 		case DatasetTypes::Cifar10Type:
 		{
-			ret = cifar10_loop(opts, modelType, trainInfo, valInfo, testInfo, tidxs, vidxs, train, test);
+			ret = cifar10_helper(opts, modelType, trainInfo, valInfo, testInfo, tidxs, vidxs, tracker, trainModel, testModel);
 			if (ret != 0) { return ret; }
 			break;
 		}
 		default:
 		{
-			std::abort();
+			return 1;
 		}
 	}
 	return 0;
 }
 
-int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, bool train, bool test)
-{
-	std::cout << ANSI_MAGENTA << "Starting to load Mnist dataset" << ANSI_END << std::endl;
+// this is terrible code having almost similar fns but libtorch uses unique ptrs and the inputs come from the cli
 
+int mnist_helper(Settings &opts, const ModelTypes modelType, const Info &trainInfo, const Info &valInfo, 
+	const Info &testInfo, train::Tracker &tracker, const bool trainModel, const bool testModel)
+{
+	const std::string datasetName = "Mnist";
+	std::cout << ANSI_MAGENTA << "Starting to load the " << datasetName << " dataset" << ANSI_END << std::endl;
 	DatasetOpts datasetOpts = opts.mnistOpts;
 	int status = 0;
 	auto [trainset, valset, testset] = make_mnist_datasets(datasetOpts, trainInfo, valInfo, testInfo);
@@ -87,33 +88,33 @@ int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, cons
 	);
 	const size_t trainSize = trainset.size().value();
 
-	if (train)
+	if (trainModel)
 	{
-		status = lenet_train(*trainloader, *valloader, trainSize, opts, modelType);
+		status = train_loop(*trainloader, *valloader, tracker, trainSize, opts, modelType);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
 	}
-	
-	if (test)
+	if (testModel)
 	{
-		status = lenet_test(*testloader, opts, modelType, train);
+		status = test_loop(*testloader, opts, modelType, datasetName, tracker, trainModel);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
 	}
-	
 	return 0;
 }
 
-int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, bool train, bool test)
+int cifar10_helper(Settings &opts, const ModelTypes modelType, const Info &trainInfo, const Info &valInfo, 
+	const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, 
+	train::Tracker &tracker, const bool trainModel, const bool testModel)
 {
-	std::cout << ANSI_MAGENTA << "Starting to load the Cifar10 dataset" << ANSI_END << std::endl;
-
+	const std::string datasetName = "Cifar10";
+	std::cout << ANSI_MAGENTA << "Starting to load the " << datasetName << " dataset" << ANSI_END << std::endl;
 	DatasetOpts datasetOpts = opts.mnistOpts;
 	int status = 0;
 	auto [trainset, valset, testset] = make_cifar10_datasets(datasetOpts, trainInfo, valInfo, testInfo, tidxs, vidxs);
@@ -135,19 +136,18 @@ int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, co
 	);
 	int trainSize = trainset.size().value();
 
-	if (train)
+	if (trainModel)
 	{
-		status = lenet_train(*trainloader, *valloader, trainSize, opts, modelType);
+		status = train_loop(*trainloader, *valloader, tracker, trainSize, opts, modelType);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
 	}
-	
-	if (test)
+	if (testModel)
 	{
-		status = lenet_test(*testloader, opts, modelType, train);
+		status = test_loop(*testloader, opts, modelType, datasetName, tracker, trainModel);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
@@ -159,33 +159,31 @@ int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, co
 
 
 template<typename Randomloader, typename Sequentialloader>
-int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, const size_t trainSize, Settings &opts, ModelTypes modelType)
+int train_loop(Randomloader &trainloader, Sequentialloader &valloader, train::Tracker &tracker, const size_t trainSize,
+	Settings &opts, ModelTypes modelType)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
-	
 	std::shared_ptr<ModelWrapper> modelWrapper = std::make_shared<ModelWrapper>(modelType, mnistOpts);
 	modelWrapper->to(opts.dev);
-
 	torch::optim::AdamW optimiser(modelWrapper->parameters(), torch::optim::AdamWOptions(opts.learningRate).weight_decay(opts.weightDecay));
 	torch::optim::ReduceLROnPlateauScheduler plateau(optimiser, torch::optim::ReduceLROnPlateauScheduler::SchedulerMode::min, 0.1, opts.plateauWait);
 	optims::sched::warmupLR warmup(optimiser, opts.learningRate, opts.warmupLen * trainSize / mnistOpts.trainBS);
 	torch::nn::CrossEntropyLoss lossFn;
 
 	int ret = 0;
-	double bestValLoss = std::numeric_limits<double>::infinity();
-	double valLoss = 0.0;
+	int i = 0;
 	bool valImprov = false;
 	bool stop = false;
 	size_t dec = 0;
 
 	std::cout << ANSI_MAGENTA << "Starting to train " + modelWrapper->get_name() << ANSI_END << "\n";
-	for (size_t epoch = 1; epoch <= opts.maxEpochs; ++epoch)
+	for (tracker.epoch = 1; tracker.epoch <= opts.maxEpochs; ++tracker.epoch)
 	{	
-		std::cout << ANSI_GREEN << "Epoch: " << epoch << ANSI_END << std::endl;
+		std::cout << ANSI_GREEN << "Epoch: " << tracker.epoch << ANSI_END << std::endl;
 		modelWrapper->train();
 
-		double trainLoss = 0.0;
-		int i = 0;
+		tracker.trainLoss = 0.0;
+		i = 0;
 		for (Batch &batch : trainloader)
 		{
 			optimiser.zero_grad();
@@ -203,38 +201,38 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, const si
 			loss.backward();
 			optimiser.step();
 
-			trainLoss += loss.item<double>();
-			i++;
+			tracker.trainLoss += loss.item<double>();
+			++i;
 			warmup.step();
 		}
-		trainLoss /= i;
+		tracker.trainLoss /= i;
 
 		// TODO: visualise the train loss with opencv
-		std::cout << ANSI_MAGENTA << "Train loss: " << trainLoss << ANSI_END << std::endl;
+		std::cout << ANSI_MAGENTA << "Train loss: " << tracker.trainLoss << ANSI_END << std::endl;
 
-		valLoss = 0.0;
-		if (epoch % opts.valInterval == 0)
+		tracker.valLoss = 0.0;
+		if (tracker.epoch % opts.valInterval == 0)
 		{
-			ret = lenet_val(modelWrapper, valloader, bestValLoss, valLoss, lossFn, valImprov, opts);
+			ret = val_loop(modelWrapper, valloader, tracker, lossFn, valImprov, opts);
 			if (ret == 1)
 			{
 				std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 				return 1;
 			}
-			stop = early_stopping(opts.IntervalsBeforeEarlyStopping, opts.minEpochs, epoch, valImprov);
+			stop = early_stopping(opts.IntervalsBeforeEarlyStopping, opts.minEpochs, tracker.epoch, valImprov);
 			if (stop)
 			{
 				return 0;
 			}
 		}
-		plateau.step(valLoss);
+		plateau.step(tracker.valLoss);
 	}
-	
 	return 0;
 }
 
 template<typename Sequentialloader>
-int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, double &bestValLoss, double &valLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
+int val_loop(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &valloader, train::Tracker &tracker, 
+	nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	modelWrapper->eval();
@@ -254,34 +252,34 @@ int lenet_val(std::shared_ptr<ModelWrapper> modelWrapper, Sequentialloader &vall
 			return 1;
 		}
 		i++;
-		valLoss += loss.item<double>();
+		tracker.valLoss += loss.item<double>();
 	}
-	valLoss /= i;
+	tracker.valLoss /= i;
 	
 	// TODO visualise
-	std::cout << ANSI_MAGENTA << "The validation loss is: " << valLoss << ANSI_END << std::endl;
+	std::cout << ANSI_MAGENTA << "The validation loss is: " << tracker.valLoss << ANSI_END << std::endl;
 	
-	// < is used to avoid false improvements
 	imp = false;
-	if (valLoss < bestValLoss)
+	if (tracker.valLoss < tracker.bestValLoss)
 	{
 		modelWrapper->save_weights(mnistOpts.workModel);
-		bestValLoss = valLoss;
+		tracker.bestValLoss = tracker.valLoss;
 		imp = true;
 		std::cout << ANSI_YELLOW << "The model improved" << ANSI_END << std::endl;
 	}
-
 	return 0;
 }
 
 template<typename Sequentialloader>
-int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelType, bool train)
+int test_loop(Sequentialloader &testloader, Settings &opts, const ModelTypes modelType, const std::string &datasetName,
+	 train::Tracker &tracker, const bool useTrainedModel)
 {
 	DatasetOpts mnistOpts = opts.mnistOpts;
 	std::unique_ptr<ModelWrapper> modelWrapper = std::make_unique<ModelWrapper>(modelType, mnistOpts);
-	std::cout << ANSI_MAGENTA << "Starting testing for " << modelWrapper->get_name() << ANSI_END << "\n";
+	std::string modelName = modelWrapper->get_name();
+	std::cout << ANSI_MAGENTA << "Starting testing for " << modelName << ANSI_END << "\n";
 
-	std::string fModel = train ? mnistOpts.workModel : mnistOpts.testModel;
+	std::string fModel = useTrainedModel ? mnistOpts.workModel : mnistOpts.testModel;
 	modelWrapper->load_weights(fModel);
 	modelWrapper->to(opts.dev);
 	modelWrapper->eval();
@@ -299,11 +297,11 @@ int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelTyp
 	mc.calc_metrics();
 	mc.print_metrics();
 	mc.print_metrics(-2);
+	AvgMetrics metrics = mc.get_metrics();
 
 	std::string ans;
 	std::cout << "Would you like to save the model?\nType name.pth to save the model, skip by not writing in the correct format" << std::endl;
 	std::getline(std::cin, ans);
-
 	std::regex rx(R"(^\w+\.pth$)");
 	if (std::regex_match(ans, rx))
 	{
@@ -312,8 +310,11 @@ int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelTyp
 	}
 	else
 	{
+		ans = "not_saved";
 		std::cout << "Not saving the model" << std::endl;
 	}
-		
-	return 0;
+	int ret = insert_experiments("/home/jesse/code/cv_project_cpp/application_project/test.db", 
+		"experimentName", modelName.c_str(), datasetName.c_str(), "trainTime", tracker.epoch, ans.c_str(), metrics.at("recall"), 
+									metrics.at("precision"), metrics.at("accuracy"), "optimiserName");
+	return ret;
 }

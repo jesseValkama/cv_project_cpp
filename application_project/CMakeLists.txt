@@ -1,20 +1,22 @@
 ﻿add_executable (application_project "application_project.cpp"
                                     "src/augmentations/geometry.cpp"
-                                    "src/database/database.cpp" "src/database/database_helpers/database_map.cpp" "src/database/database_helpers/param_info.cpp"
+                                    "src/database/database.cpp" "src/database/database_map.cpp"
+                                    "src/database/param_info.cpp" "src/database/query_template_manager.cpp"
+                                    "src/database/database_helpers.cpp"
                                     "src/datasets/loader_funcs.cpp" "src/datasets/mnist.cpp"
                                     "src/datasets/cifar10.cpp" "src/datasets/data_helper.cpp"
                                     "src/settings.cpp"
                                     "src/models/common.cpp" "src/models/model_wrapper.cpp"
                                     "src/models/lenet.cpp" "src/models/resnet.cpp"
                                     "src/metrics/classification_metrics.cpp"
-                                    "src/functions/common.cpp"
+                                    "src/functions/common.cpp" "src/functions/experiments_database.cpp"
                                     "src/functions/train_lenet.cpp"
                                     "src/functions/inference.cpp" "src/functions/handle_args.cpp"
                                     "src/functions/gradcam.cpp" "src/functions/visualise.cpp"
                                     "src/optims/scheds/warmup.cpp"
                                     "src/plots/plots.cpp"
 )
-
+include(cmake/paths.cmake)
 include(FetchContent)
 FetchContent_Declare(
   yaml-cpp
@@ -23,11 +25,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
-set(CMAKE_PREFIX_PATH "D:/cpptools/libtorch;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6;D:/cpptools/opencv/build")
-set(SQLITE3_ROOT "D:/cpptools/sqlite3")
-
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
+# find_package(yaml-cpp REQUIRED)
 
 add_library(sqlite3 
     STATIC ${SQLITE3_ROOT}/sqlite3.c
@@ -68,5 +68,4 @@ if (MSVC)
             $<TARGET_FILE_DIR:application_project>
     )
 endif(MSVC)
-
 #add_subdirectory(tests)

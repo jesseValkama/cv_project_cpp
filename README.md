@@ -1,6 +1,6 @@
-# CV application project (currenty at a break due to school)
+# CV application project
 
-A simple ResNet classification project with cpp. This is my first cpp project, so be warned.
+A simple ResNet/Cifar10 classification project with cpp. This is my first cpp project, older code might be rough. Some of this is in process of being rewritten (if/when it becomes a problem)
 
 ## Description
 
@@ -13,50 +13,62 @@ feature map visualisations either by index or gradcam.
 
 ### Dependencies
 
-Here is a list of dependencies. However, some of them might not be required,
-but no alternatives are tested.
+I use two systems, a laptop (Linux Mint) and main desktop (Windows 11).
 
-* Windows 11
-* Visual Studio 2022 (17.14.10) (recommended)
-* nvidia rtx 2070 super (any card thats supports cuda 12.6 should be fine, if using gpu)
-
-* msvc v143 for (x64/x86) (14.40-17.10) (recommended)
-* ninja (1.12.1) (recommended)
-* cmake (3.31.6) (required)
+#### General
+* nvidia rtx 2070 super (cuda 12.6)
 * mnist dataset (if you want to train a model by yourself, i donwloaded mine from kaggle)
 * cifar10 dataset (same as before but from https://www.cs.toronto.edu/%7Ekriz/cifar.html)
-* Image Watch for Visual Studio 2022 (you can visualise imgs when debugging)
 
-* cuda 12.6 (could work without if using cpu)
-* libtorch 2.8.0 DEBUG (required, release might work too on linux)
-* opencv 4.9.0 (built from source with cmake and ninja)
+#### Linux Mint 22.3 (recommended)
+* VS Code (latest)
+* g++ (13.3.0)
+* clang (18.1.3) (might start using with g++ to make sense of errmsgs)
+* valgrind (3.22.0)
+* ninja (1.11.1)
+* cmake (3.28.3)
+* opencv
+* libtorch
+
+#### Windows 11 (i am hoping to move my main pc away from this soon)
+* Visual Studio 2022 (17.14.10)
+* msvc v143 for (x64/x86) (14.40-17.10)
+* cmake (3.31.6) (required)
+* ninja (1.12.1)
+* Image Watch for Visual Studio 2022 (you can visualise imgs when debugging)
+* libtorch (2.8.0 DEBUG)
+* opencv (4.9.0, built from source with cmake and ninja)
+* cuda (12.6)
 
 ### Installing
 
 First you need to install the packages (and datasets?). In addition, you need to install the correct
-versions of compilers builders and IDEs.
+versions of compilers, build tools, and IDEs.
 
 ### Executing program
 
-First you need to have a look at the settings.h file, where you need to change
-the paths of the directories. In addition, have a look at the cmake files and
-change the directories there. Lastly, if you haven't done yet so, you need to add
-cuda, libtorch and opencv to path.
-
-TODO fix this (easier to compile and run with vs 2022):
+The paths are not constructed properly yet. Hence you need to change them in settings.h, settings.yaml, cmake/paths.cmake, and possibly in application_project.cpp. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path.
 
 ```
 git clone https://github.com/jesseValkama/cv_project_cpp
 ```
+I use the following on Linux, on Windows CTRL + S on CMakeLists.txt for configurating the program
 ```
-cmake -S <src> . -B <out/build> -G Ninja -B -DCMAKE_CXX_COMPILER=cl --config Debug
-```
-```
-cmake --build <build> J <nThreads>
+chmod +x gen.sh
 ```
 ```
-./application_project train x test x inference x xai x model x
+./gen.sh
 ```
+I use the following on Linux, on Windows CTRL + B for building the program
+```
+cmake --build build -j <nThreads>
+```
+I use the following on Linux, on Windows f5 and set up the args in .json file for running the program
+```
+./build/application_project/application_project args
+```
+where, args are:
+
 train: 0 || 1
 
 test: 0 || 1
@@ -69,13 +81,19 @@ model: 1 (LeNet), 2 (ResNet)
 
 dataset: 1 (mnist), 2 (cifar10)
 
+to use the database:
+```
+sqlite3 name.db
+.schema
+```
+```
+SELECT * FROM experiments JOIN metrics ON experiments.id = metrics.metrics_id JOIN config ON experiments.id = config.config_id;
+```
 
 ## Help
 
 If there is an issue with a nullptr when forward passing, you are likely using
-the release version of libtorch on Windows on debug mode. 
-
-This project has not been tested with a vm.
+the release version of libtorch on Windows. Please use the debug version. (This would never happen to me.)
 
 ## Authors
 
@@ -94,6 +112,7 @@ from stackoverflow can be found in the .h files.
 ## References
 
 Credits to the following research papers.
+
 * [Cifar10](https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf)
 * [Gradcam](https://arxiv.org/abs/1610.02391)
 * [LeNet & minst](https://arxiv.org/abs/1610.02391)

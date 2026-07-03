@@ -3,6 +3,7 @@
 
 #include <torch/torch.h>
 
+#include <limits>
 #include <memory>
 #include <stdint.h>
 #include <string>
@@ -19,7 +20,24 @@
 *	https://github.com/pytorch/examples/tree/main/cpp/mnist
 */
 
-int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, bool train = false, bool test = false);
+/*
+* TODO: check const usage
+*/
+
+namespace train
+{
+
+struct Tracker
+{
+	double trainLoss = std::numeric_limits<double>::infinity();
+	double valLoss = std::numeric_limits<double>::infinity();
+	double bestValLoss = std::numeric_limits<double>::infinity();
+	double accuracy = 0.0;
+	size_t epoch;
+};
+
+int run_loop(Settings &opts, const ModelTypes modelType, const DatasetTypes datasetType, 
+	const bool trainModel = false, const bool testModel = false);
 /*
 	* This is the main training loop
 	* 
@@ -33,12 +51,22 @@ int lenet_loop(Settings &opts, ModelTypes modelType, DatasetTypes datasetType, b
 	*	1: failed (logged to terminal)
 */
 
-int mnist_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, bool train = false, bool test = false);
+} // end of train
 
-int cifar10_loop(Settings &opts, ModelTypes modelType, const Info &trainInfo, const Info &valInfo, const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, bool train = false, bool test = false);
+int mnist_helper(Settings &opts, const ModelTypes modelType, const Info &trainInfo, const Info &valInfo, 
+	const Info &testInfo, train::Tracker &tracker, const bool trainModel = false, const bool testModel = false);
+/*
+*/
+
+int cifar10_helper(Settings &opts, const ModelTypes modelType, const Info &trainInfo, const Info &valInfo, 
+	const Info &testInfo, const std::vector<int> &tidxs, const std::vector<int> &vidxs, 
+	train::Tracker &tracker, const bool trainModel = false, const bool testModel = false);
+/*
+*/
 
 template<typename Randomloader, typename Sequentialloader>
-int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, const size_t trainSize, Settings &opts, ModelTypes modelType);
+int train_loop(Randomloader &trainloader, Sequentialloader &valloader, train::Tracker &tracker, const size_t trainSize, 
+	Settings &opts, ModelTypes modelType);
 /*
 	* The function to train LeNet
 	* 
@@ -55,7 +83,8 @@ int lenet_train(Randomloader &trainloader, Sequentialloader &valloader, const si
 */
 
 template<typename Sequentialloader>
-int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, double &bestValLoss, double &valLoss, nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
+int val_loop(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, train::Tracker &tracker, 
+	nn::CrossEntropyLoss &lossFn, bool &imp, Settings &opts);
 /*
 	* The function to validate LeNet
 	* 
@@ -73,7 +102,8 @@ int lenet_val(std::shared_ptr<ModelWrapper> model, Sequentialloader &valloader, 
 */
 
 template<typename Sequentialloader>
-int lenet_test(Sequentialloader &testloader, Settings &opts, ModelTypes modelType, bool train);
+int test_loop(Sequentialloader &testloader, Settings &opts, const ModelTypes modelType, const std::string &datasetName,
+	 train::Tracker &tracker, const bool useTrainedModel);
 /*
 	* The function to test LeNet, currently only tests the model from the last training
 	* 

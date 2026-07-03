@@ -1,5 +1,6 @@
 ﻿#include "application_project.h"
 
+#include <iostream>
 #include <optional>
 #include <stdint.h>
 #include <string>
@@ -13,25 +14,25 @@
 #include "functions/train_lenet.h"
 #include "models/model_wrapper.h"
 
-#include <sqlite3.h>
-#include "database/database.h"
-#include "database/database_helpers/database_map.h"
-
 int main(int argc, char *argv[])
 {
 	/*
 	* todo:
-	* 
-	* sqlite3 database TODO: finalise statements without executing for error handling
+	*
+	* cnn + vit hybrid (with distillation)
+	* document include/database (oh boy will i like documenting half a year old code)
 	* graphs
-	* improve aug
-	* vit
-	* add unit tests (does googletest even work with libtorch?) and probably github actions too
-	* 
-	* improve readme
+	* add unit tests (valgrind + sanitisers + googletest + ctest)
+	* fix strides of structs
+	* logger
+	* fix project structure
+	* There is a problem with model weight imports (I could not load the model trained on main desktop on my lapotp)
 	*/
 	std::optional<std::unordered_map<std::string, int16_t>> args = handle_args(argc, argv);
-	if (!args.has_value()) { return 1; }
+	if (!args.has_value()) 
+	{ 
+		return 1; 
+	}
 	bool train = args->at("train") == 1 ? true : false;
 	bool test = args->at("test") == 1 ? true : false;
 	bool inference = args->at("inference") == 1 ? true : false;
@@ -40,24 +41,12 @@ int main(int argc, char *argv[])
 	DatasetTypes datasetType = static_cast<DatasetTypes>(args->at("dataset"));
 	Settings settings(datasetType, modelType);
 	int ret = 0;
-	
-	// tmp code
-	sqlite3 *database = nullptr;
-	const char *filename = "D:/self-studies/application_project/application_project/test.db";
-	ret = db::open(filename, &database);
-	if (ret != 0) { return ret; }
-	//ret = db::create_experiments(database);
-	DatabaseMap databaseMap(db::get_database_constructor("experiment9", "resnet", "time.time", 80, "filename", 90.0, 90.0, 90.0, "adamw", settings));
-	ret = databaseMap.topoSort();
-	if (ret != 0) { return ret; }
-	ret = db::insert_experiments(database, databaseMap);
-	if (ret != 0) { return ret; }
-	ret = db::close(database);
-	if (ret != 0) { return ret; }
+
+	std::cout << "size of settings: " << sizeof(Settings) << std::endl;
 
 	if (train || test)
 	{
-		ret = lenet_loop(settings, modelType, datasetType, train, test);
+		ret = train::run_loop(settings, modelType, datasetType, train, test);
 		if (ret != 0) { return ret; }
 	}
 	if (inference)

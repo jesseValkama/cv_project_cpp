@@ -74,6 +74,10 @@ public:
 	* Method to print the cm table
 	*/
 
+	AvgMetrics get_metrics() const;
+	/*
+	*/
+
 	void print_metrics(int idx = -1);
 	/*
 	* Method to print out metrics: recall, precision and accuracy

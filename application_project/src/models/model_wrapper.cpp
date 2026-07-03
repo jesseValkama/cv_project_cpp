@@ -16,6 +16,10 @@
 
 namespace fs = std::filesystem;
 
+/*
+* TODO: change abort to return conditions
+*/
+
 ModelWrapper::ModelWrapper(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis)
 	: mnistOpts(mnistOpts)
 {

@@ -1,7 +1,11 @@
+# This file is mostly ChatGPT generated
+
 # Build folders
 /out/
 /bin/
 /lib/
+/build/
+run.sh
 
 # Visual Studio
 *.vcxproj*
@@ -11,6 +15,7 @@
 *.pdb
 *.log
 .vs/
+.vscode/
 
 # CMake
 CMakeFiles/
@@ -26,6 +31,7 @@ cmake_install.cmake
 /opencv/
 
 # Weights
+/application_project/weights
 /application_project/weights/working.pth
 /application_project/weights/lenet_cifar10.pth
 /application_project/weights/resnet_cifar10.pth

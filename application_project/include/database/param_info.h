@@ -3,7 +3,16 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <variant>
+
+enum DBRets
+{
+	DB_OK = 0,
+	DB_SKIP = 1,
+	DB_ERR_UNKNOWN = 10,
+	DB_ERR_SCHEMA = 11
+};
 
 enum SqliteTypes
 {
@@ -14,17 +23,17 @@ enum SqliteTypes
 	TYPE_NULL = 5
 };
 
-enum Queries
+enum QueryTypes
 {
 	CREATE = 0,
 	INSERT = 1,
-	UPDATE = 2
+	UPDATE = 2,
+	DELETE = 3,
+	VALIDATE = 4
 };
 
 struct ForeignKey
 {
-	using QueryVariant = std::variant<const char *, int, double>;
-
 	std::string referenceTable = "";
 	std::string referenceColumn = "";
 	bool cascade = true;
@@ -48,5 +57,7 @@ struct ParamInfo
 	ParamInfo(const QueryVariant value, const SqliteTypes type, const bool notNull = false, const bool unique = false, const bool autoIncrement = false, const bool primaryKey = false, const std::optional<ForeignKey> foreignKey = std::nullopt) 
 		: value(value), type(type), notNull(notNull), unique(unique), autoIncrement(autoIncrement), primaryKey(primaryKey), foreignKey(foreignKey) {};
 };
+
+extern std::unordered_map<SqliteTypes, std::string> sqliteTypesMap;
 
 #endif // PARAMINFO_H

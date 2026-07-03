@@ -57,6 +57,12 @@ void MetricsContainer::calc_metrics()
 	metrics = { {"recall", recall},{"precision", precision},{"accuracy", accuracy} };
 }
 
+
+AvgMetrics MetricsContainer::get_metrics() const
+{
+	return this->metrics;
+}
+
 void MetricsContainer::print_metrics(int idx)
 {
 	assert(idx >= -2);

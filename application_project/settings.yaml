@@ -4,20 +4,20 @@
 # i downloaded the dataset from https://www.cs.toronto.edu/%7Ekriz/cifar.html
 cifar10_data_paths:
   train_paths: # must be a list
-    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_1.bin"
-    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_2.bin"
-    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_3.bin"
-    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_4.bin"
-    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_5.bin"
+    - "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_1.bin"
+    - "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_2.bin"
+    - "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_3.bin"
+    - "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_4.bin"
+    - "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/data_batch_5.bin"
   test_paths: # must be a list
-    - "D:/datasets/cifar-10-binary/cifar-10-batches-bin/test_batch.bin"
+    - "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/test_batch.bin"
   inference_data:
-    inference_path: "D:/datasets/cifar10_inference_imgs"
+    inference_path: "/home/jesse/datasets/cifar10_inference_imgs"
   meta_data:
-    meta_path: "D:/datasets/cifar-10-binary/cifar-10-batches-bin/batches.meta.txt"
+    meta_path: "/home/jesse/datasets/cifar-10-binary/cifar-10-batches-bin/batches.meta.txt"
 
 cifar10_model_paths:
-  save_path: "D:/self-studies/application_project/application_project/weights"
+  save_path: "/home/jesse/code/cv_project_cpp/application_project/weights"
   inference_name: "resnet_cifar10" # you can leave out the formatting like .pth, it is automatically added for model names
   test_name: "resnet_cifar10"
   work_name: "working"
@@ -34,8 +34,8 @@ cifar10_train_settings:
     val: 256
     test: 256
   multiprocessing:
-    num_workers: 6 # cores to use for multiprocessing
-    async: true # async transfers to vram
+    num_workers: 4 # cores to use for multiprocessing
+    async: false # async transfers to vram
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -44,18 +44,18 @@ cifar10_train_settings:
 # i downloaded the dataset from https://www.kaggle.com/datasets/hojjatk/mnist-dataset
 mnist_data_paths:
   train_data:
-    train_imgs: "D:/datasets/mnist/train-images.idx3-ubyte"
-    train_labels: "D:/datasets/mnist/train-labels.idx1-ubyte"
+    train_imgs: "/home/jesse/datasets/mnist/train-images.idx3-ubyte"
+    train_labels: "/home/jesse/datasets/mnist/train-labels.idx1-ubyte"
   test_data:
-    test_imgs: "D:/datasets/mnist/t10k-images.idx3-ubyte"
-    test_labels: "D:/datasets/mnist/t10k-labels.idx1-ubyte"
+    test_imgs: "/home/jesse/datasets/mnist/t10k-images.idx3-ubyte"
+    test_labels: "/home/jesse/datasets/mnist/t10k-labels.idx1-ubyte"
   inference_data:
-    inference_imgs: "D:/datasets/mnist_inference_imgs"
+    inference_imgs: "/home/jesse/datasets/mnist_inference_imgs"
  
 mnist_model_paths:
-    save_path: "D:/self-studies/application_project/application_project/weights"
-    inference_name: "lenet_mnist" # you can leave out the formatting like .pth, it is automatically added for model names
-    test_name: "lenet_mnist"
+    save_path: "/home/jesse/code/cv_project_cpp/application_project/weights"
+    inference_name: "lenet" # you can leave out the formatting like .pth, it is automatically added for model names
+    test_name: "lenet"
     work_name: "working"
   
 mnist_train_settings:
@@ -70,8 +70,8 @@ mnist_train_settings:
     val: 128
     test: 128
   multiprocessing:
-    num_workers: 6 # cores to use for multiprocessing
-    async: true # async transfers to vram
+    num_workers: 4 # cores to use for multiprocessing
+    async: false # async transfers to vram
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -83,11 +83,10 @@ resnet_imgresz: 224
 #lenet options (change the actual model in models/lenet.h)
 lenet_imgresz: 32
 
-dev: false # set in the actual functions/settings.h file
 general_settings:
   loop:
-    min_epochs: 20
-    max_epochs: 60
+    min_epochs: 1
+    max_epochs: 10
     validation_interval: 1 # epoch % x == 0 ? validate : not
     early_stop_counter: 6 # not improved in a row to trigger early stop
     amp: false # not implemented yet

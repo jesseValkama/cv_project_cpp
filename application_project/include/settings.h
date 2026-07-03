@@ -64,10 +64,11 @@ struct DatasetOpts
 
 struct Settings
 {
-	YAML::Node yaml = YAML::LoadFile("D:/self-studies/application_project/application_project/settings.yaml");
+	YAML::Node yaml = YAML::LoadFile("/home/jesse/code/cv_project_cpp/application_project/settings.yaml");
 	DatasetOpts mnistOpts = DatasetOpts(yaml);
 
-	torch::Device dev = torch::kCUDA;
+	// torch::Device dev = torch::kCUDA.available() ? torch::kCUDA : torch::kCPU;
+	torch::Device dev = torch::kCPU;
 	size_t minEpochs = 0;
 	size_t maxEpochs = 0;
 	size_t valInterval = 0;

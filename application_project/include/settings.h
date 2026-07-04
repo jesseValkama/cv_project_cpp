@@ -66,9 +66,9 @@ struct Settings
 {
 	YAML::Node yaml = YAML::LoadFile("/home/jesse/code/cv_project_cpp/application_project/settings.yaml");
 	DatasetOpts mnistOpts = DatasetOpts(yaml);
+	std::string databasePath = "";
 
-	// torch::Device dev = torch::kCUDA.available() ? torch::kCUDA : torch::kCPU;
-	torch::Device dev = torch::kCPU;
+	torch::Device dev = torch::cuda::is_available() ? torch::kCUDA : torch::kCPU;
 	size_t minEpochs = 0;
 	size_t maxEpochs = 0;
 	size_t valInterval = 0;

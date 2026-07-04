@@ -83,6 +83,8 @@ resnet_imgresz: 224
 #lenet options (change the actual model in models/lenet.h)
 lenet_imgresz: 32
 
+database_path: "/home/jesse/code/cv_project_cpp/application_project/test.db"
+
 general_settings:
   loop:
     min_epochs: 1

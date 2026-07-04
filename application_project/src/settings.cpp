@@ -121,6 +121,7 @@ void DatasetOpts::assign_from_cifar10(ModelTypes modelType, YAML::Node &yaml)
 
 Settings::Settings(DatasetTypes datasetType, ModelTypes modelType)
 {
+	databasePath = yaml["database_path"].as<std::string>();
 	minEpochs = yaml["general_settings"]["loop"]["min_epochs"].as<size_t>();
 	maxEpochs = yaml["general_settings"]["loop"]["max_epochs"].as<size_t>();
 	valInterval = yaml["general_settings"]["loop"]["validation_interval"].as<size_t>();

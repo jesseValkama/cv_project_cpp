@@ -47,7 +47,7 @@ versions of compilers, build tools, and IDEs.
 
 ### Executing program
 
-The paths are not constructed properly yet. Hence you need to change them in settings.h, settings.yaml, cmake/paths.cmake, and possibly in application_project.cpp. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path.
+The paths are not constructed properly yet. Hence you need to change them in settings.h, settings.yaml, and cmake/{linux/windows}/paths.cmake. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path.
 
 ```
 git clone https://github.com/jesseValkama/cv_project_cpp
@@ -61,8 +61,10 @@ chmod +x gen.sh
 ```
 I use the following on Linux, on Windows CTRL + B for building the program
 ```
-cmake --build build -j <nThreads>
+cmake --build build -j n
 ```
+where, n is the number of jobs in parallel
+
 I use the following on Linux, on Windows f5 and set up the args in .json file for running the program
 ```
 ./build/application_project/application_project args

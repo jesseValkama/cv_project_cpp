@@ -313,7 +313,7 @@ int test_loop(Sequentialloader &testloader, Settings &opts, const ModelTypes mod
 		ans = "not_saved";
 		std::cout << "Not saving the model" << std::endl;
 	}
-	int ret = insert_experiments("/home/jesse/code/cv_project_cpp/application_project/test.db", 
+	int ret = insert_experiments(opts.databasePath.c_str(), 
 		"experimentName", modelName.c_str(), datasetName.c_str(), "trainTime", tracker.epoch, ans.c_str(), metrics.at("recall"), 
 									metrics.at("precision"), metrics.at("accuracy"), "optimiserName");
 	return ret;

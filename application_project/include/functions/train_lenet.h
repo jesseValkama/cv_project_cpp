@@ -34,6 +34,8 @@ struct Tracker
 	double bestValLoss = std::numeric_limits<double>::infinity();
 	double accuracy = 0.0;
 	size_t epoch;
+	float trainTime;
+	float testTime;
 };
 
 int run_loop(Settings &opts, const ModelTypes modelType, const DatasetTypes datasetType, 

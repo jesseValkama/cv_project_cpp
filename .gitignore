@@ -41,6 +41,8 @@ cmake_install.cmake
 .DS_Store
 Thumbs.db
 
+/application_project/settings.yaml
+
 # TODO
 /application_project/augmentations/colour.cpp
 /application_project/augmentations/colour.h

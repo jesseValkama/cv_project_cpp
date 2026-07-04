@@ -11,7 +11,7 @@ target_sources (application_project
                         "src/settings.cpp"
                         "src/models/common.cpp" "src/models/model_wrapper.cpp"
                         "src/models/lenet.cpp" "src/models/resnet.cpp"
-                        "src/metrics/classification_metrics.cpp"
+                        "src/metrics/classification_metrics.cpp" "src/metrics/timer.cpp"
                         "src/functions/common.cpp" "src/functions/experiments_database.cpp"
                         "src/functions/train_lenet.cpp"
                         "src/functions/inference.cpp" "src/functions/handle_args.cpp"

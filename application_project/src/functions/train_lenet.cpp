@@ -17,6 +17,7 @@
 #include "datasets/loader_funcs.h"
 #include "datasets/mnist.h"
 #include "metrics/classification_metrics.h"
+#include "metrics/timer.h"
 #include "models/model_wrapper.h"
 #include "settings.h"
 #include "optims/scheds/warmup.h"
@@ -90,21 +91,29 @@ int mnist_helper(Settings &opts, const ModelTypes modelType, const Info &trainIn
 
 	if (trainModel)
 	{
+		Timer trainTimer = Timer();
+		trainTimer.start();
 		status = train_loop(*trainloader, *valloader, tracker, trainSize, opts, modelType);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
+		tracker.trainTime = trainTimer.checkpoint();
+		std::cout << "Training took: " << trainTimer.format_time(tracker.trainTime) << std::endl;
 	}
 	if (testModel)
 	{
+		Timer testTimer = Timer();
+		testTimer.start();
 		status = test_loop(*testloader, opts, modelType, datasetName, tracker, trainModel);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
+		tracker.testTime = testTimer.checkpoint();
+		std::cout << "Testing took: " << testTimer.format_time(tracker.testTime) << std::endl;
 	}
 	return 0;
 }
@@ -138,21 +147,29 @@ int cifar10_helper(Settings &opts, const ModelTypes modelType, const Info &train
 
 	if (trainModel)
 	{
+		Timer trainTimer = Timer();
+		trainTimer.start();
 		status = train_loop(*trainloader, *valloader, tracker, trainSize, opts, modelType);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
+		tracker.trainTime = trainTimer.checkpoint();
+		std::cout << "Training took: " << trainTimer.format_time(tracker.trainTime) << std::endl;
 	}
 	if (testModel)
 	{
+		Timer testTimer = Timer();
+		testTimer.start();
 		status = test_loop(*testloader, opts, modelType, datasetName, tracker, trainModel);
 		if (status != 0)
 		{
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
+		tracker.testTime = testTimer.checkpoint();
+		std::cout << "Testing took: " << testTimer.format_time(tracker.testTime) << std::endl;
 	}
 	return 0;
 }

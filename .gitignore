@@ -41,13 +41,6 @@ cmake_install.cmake
 .DS_Store
 Thumbs.db
 
-/application_project/settings.yaml
-
-# TODO
-/application_project/augmentations/colour.cpp
-/application_project/augmentations/colour.h
-/application_project/optims/lion.cpp
-/application_project/optims/lion.h
+# Other/todo
 /application_project/cifar10_inference
 /application_project/test.db
-/application_project/ref.db

@@ -30,7 +30,7 @@ I use two systems, a laptop (Linux Mint) and main desktop (Windows 11). Linux is
 * opencv
 * libtorch
 
-#### Windows 11
+#### Windows 11 (debug is significantly slower)
 * Visual Studio 2022 (17.14.10)
 * msvc v143 for (x64/x86) (14.40-17.10)
 * cmake (3.31.6) (required)
@@ -49,15 +49,19 @@ versions of compilers, build tools, and IDEs.
 
 The paths are not constructed properly yet. Hence you need to change them in settings.h, settings.yaml, and cmake/{linux/windows}/paths.cmake. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path.
 
-To set up settings yaml file, you need to:
-```
-cp settings-template.yaml settings.yaml
-```
-Then change settings-local.yaml
-
+First clone the repo
 ```
 git clone https://github.com/jesseValkama/cv_project_cpp
 ```
+
+To set up settings yaml file and experiments database, you need to:
+```
+cd application_project
+cp settings-template.yaml settings.yaml
+touch experiments.db
+```
+Then change settings.yaml
+
 I use the following on Linux, on Windows CTRL + S on CMakeLists.txt for configurating the program
 ```
 chmod +x release.sh
@@ -91,10 +95,6 @@ model: 1 (LeNet), 2 (ResNet)
 
 dataset: 1 (mnist), 2 (cifar10)
 
-to use the database:
-```
-touch experiments.db
-```
 And after running experiments:
 ```
 sqlite3 experiments.db

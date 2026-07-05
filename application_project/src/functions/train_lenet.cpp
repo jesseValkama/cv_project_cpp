@@ -99,8 +99,8 @@ int mnist_helper(Settings &opts, const ModelTypes modelType, const Info &trainIn
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
-		tracker.trainTime = trainTimer.checkpoint();
-		std::cout << "Training took: " << trainTimer.format_time(tracker.trainTime) << std::endl;
+		tracker.trainTime = trainTimer.format_time(trainTimer.checkpoint());
+		std::cout << "Training took: " << tracker.trainTime << std::endl;
 	}
 	if (testModel)
 	{
@@ -112,8 +112,8 @@ int mnist_helper(Settings &opts, const ModelTypes modelType, const Info &trainIn
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
-		tracker.testTime = testTimer.checkpoint();
-		std::cout << "Testing took: " << testTimer.format_time(tracker.testTime) << std::endl;
+		tracker.testTime = testTimer.format_time(testTimer.checkpoint());
+		std::cout << "Testing took: " << tracker.testTime << std::endl;
 	}
 	return 0;
 }
@@ -155,8 +155,8 @@ int cifar10_helper(Settings &opts, const ModelTypes modelType, const Info &train
 			std::cout << ANSI_RED << "The training failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
-		tracker.trainTime = trainTimer.checkpoint();
-		std::cout << "Training took: " << trainTimer.format_time(tracker.trainTime) << std::endl;
+		tracker.trainTime = trainTimer.format_time(trainTimer.checkpoint());
+		std::cout << "Training took: " << tracker.trainTime << std::endl;
 	}
 	if (testModel)
 	{
@@ -168,8 +168,8 @@ int cifar10_helper(Settings &opts, const ModelTypes modelType, const Info &train
 			std::cout << ANSI_RED << "The testing failed, fatal" << ANSI_END << std::endl;
 			return status;
 		}
-		tracker.testTime = testTimer.checkpoint();
-		std::cout << "Testing took: " << testTimer.format_time(tracker.testTime) << std::endl;
+		tracker.testTime = testTimer.format_time(testTimer.checkpoint());
+		std::cout << "Testing took: " << tracker.testTime << std::endl;
 	}
 	return 0;
 }
@@ -331,7 +331,7 @@ int test_loop(Sequentialloader &testloader, Settings &opts, const ModelTypes mod
 		std::cout << "Not saving the model" << std::endl;
 	}
 	int ret = insert_experiments(opts.databasePath.c_str(), 
-		"experimentName", modelName.c_str(), datasetName.c_str(), "trainTime", tracker.epoch, ans.c_str(), metrics.at("recall"), 
+		"experimentName", modelName.c_str(), datasetName.c_str(), tracker.trainTime.c_str(), tracker.epoch, ans.c_str(), metrics.at("recall"), 
 									metrics.at("precision"), metrics.at("accuracy"), "optimiserName");
 	return ret;
 }

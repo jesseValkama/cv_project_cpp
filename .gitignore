@@ -43,4 +43,5 @@ Thumbs.db
 
 # Other/todo
 /application_project/cifar10_inference
-/application_project/test.db
+/application_project/experiments.db
+/application_project/settings.yaml

@@ -13,7 +13,7 @@ feature map visualisations either by index or gradcam.
 
 ### Dependencies
 
-I use two systems, a laptop (Linux Mint) and main desktop (Windows 11).
+I use two systems, a laptop (Linux Mint) and main desktop (Windows 11). Linux is used for development and Windows (with better specs) for training the models.
 
 #### General
 * nvidia rtx 2070 super (cuda 12.6)
@@ -30,7 +30,7 @@ I use two systems, a laptop (Linux Mint) and main desktop (Windows 11).
 * opencv
 * libtorch
 
-#### Windows 11 (i am hoping to move my main pc away from this soon)
+#### Windows 11
 * Visual Studio 2022 (17.14.10)
 * msvc v143 for (x64/x86) (14.40-17.10)
 * cmake (3.31.6) (required)
@@ -49,15 +49,23 @@ versions of compilers, build tools, and IDEs.
 
 The paths are not constructed properly yet. Hence you need to change them in settings.h, settings.yaml, and cmake/{linux/windows}/paths.cmake. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path.
 
+To set up settings yaml file, you need to:
+```
+cp settings-template.yaml settings.yaml
+```
+Then change settings-local.yaml
+
 ```
 git clone https://github.com/jesseValkama/cv_project_cpp
 ```
 I use the following on Linux, on Windows CTRL + S on CMakeLists.txt for configurating the program
 ```
-chmod +x gen.sh
+chmod +x release.sh
+chmod +x debug.sh
 ```
 ```
-./gen.sh
+./release.sh
+./debug.sh
 ```
 I use the following on Linux, on Windows CTRL + B for building the program
 ```
@@ -85,11 +93,13 @@ dataset: 1 (mnist), 2 (cifar10)
 
 to use the database:
 ```
-sqlite3 name.db
+touch experiments.db
+sqlite3 experiments.db
 .schema
 ```
+And after running experiments:
 ```
-SELECT * FROM experiments JOIN metrics ON experiments.id = metrics.metrics_id JOIN config ON experiments.id = config.config_id;
+SELECT * FROM experiments JOIN metrics ON experiments.id = metrics.metrics_id JOIN config ON experiments.id = config.config_id LIMIT 5;
 ```
 
 ## Help
@@ -110,12 +120,3 @@ from stackoverflow can be found in the .h files.
 * [Libtorch tutorial code snippets](https://github.com/pytorch/examples/tree/main/cpp)
 * [Tutorial videos for cpp](https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb)
 * [Template for this readme](https://gist.github.com/DomPizzie/7a5ff55ffa9081f2de27c315f5018afc)
-
-## References
-
-Credits to the following research papers.
-
-* [Cifar10](https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf)
-* [Gradcam](https://arxiv.org/abs/1610.02391)
-* [LeNet & minst](https://arxiv.org/abs/1610.02391)
-* [Resnet](https://arxiv.org/abs/1512.03385)

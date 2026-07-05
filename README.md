@@ -94,10 +94,12 @@ dataset: 1 (mnist), 2 (cifar10)
 to use the database:
 ```
 touch experiments.db
+```
+And after running experiments:
+```
 sqlite3 experiments.db
 .schema
 ```
-And after running experiments:
 ```
 SELECT * FROM experiments JOIN metrics ON experiments.id = metrics.metrics_id JOIN config ON experiments.id = config.config_id LIMIT 5;
 ```

@@ -1,3 +1,5 @@
+# credit: https://docs.pytorch.org/cppdocs/installing.html
+
 include(${CMAKE_CURRENT_LIST_DIR}/../common_packages.cmake)
 if (MSVC)
     file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")

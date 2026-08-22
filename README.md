@@ -20,7 +20,7 @@ I use two systems, a laptop (Linux Mint) and main desktop (Windows 11). Linux is
 * mnist dataset (if you want to train a model by yourself, i donwloaded mine from kaggle)
 * cifar10 dataset (same as before but from https://www.cs.toronto.edu/%7Ekriz/cifar.html)
 
-#### Linux Mint 22.3 (recommended)
+#### Linux Mint 22.3 (Linux recommended)
 * VS Code (latest)
 * g++ (13.3.0)
 * clang (18.1.3) (might start using with g++ to make sense of errmsgs)
@@ -30,14 +30,13 @@ I use two systems, a laptop (Linux Mint) and main desktop (Windows 11). Linux is
 * opencv
 * libtorch
 
-#### Windows 11 (debug is significantly slower)
-* Visual Studio 2022 (17.14.10)
+#### Windows 11 (Release versions of packages)
+* VS Code
 * msvc v143 for (x64/x86) (14.40-17.10)
 * cmake (3.31.6) (required)
 * ninja (1.12.1)
-* Image Watch for Visual Studio 2022 (you can visualise imgs when debugging)
-* libtorch (2.8.0 DEBUG)
-* opencv (4.9.0, built from source with cmake and ninja)
+* libtorch (2.12.2+cu126 Release)
+* opencv (4.12.0 Windows)
 * cuda (12.6)
 
 ### Installing
@@ -47,7 +46,7 @@ versions of compilers, build tools, and IDEs.
 
 ### Executing program
 
-The paths are not constructed properly yet. Hence you need to change them in settings.h, settings.yaml, and cmake/{linux/windows}/paths.cmake. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path.
+The paths are not constructed properly yet. Hence, you need to change them in settings.h, settings.yaml, and cmake/{linux/windows}/paths.cmake. In addition, for Windows, some paths like Cuda, LibTorch, and OpenCV might need to be added to path. Most of the following instructions are for Linux. I use GUIs and git bash on Windows.
 
 First clone the repo
 ```
@@ -62,7 +61,7 @@ touch experiments.db
 ```
 Then change settings.yaml
 
-I use the following on Linux, on Windows CTRL + S on CMakeLists.txt for configurating the program
+Configure the program by using (cmake configure):
 ```
 chmod +x release.sh
 chmod +x debug.sh
@@ -71,13 +70,14 @@ chmod +x debug.sh
 ./release.sh
 ./debug.sh
 ```
-I use the following on Linux, on Windows CTRL + B for building the program
+
+To build the program:
 ```
 cmake --build build -j n
 ```
 where, n is the number of jobs in parallel
 
-I use the following on Linux, on Windows f5 and set up the args in .json file for running the program
+Run the program:
 ```
 ./build/application_project/application_project args
 ```

@@ -64,7 +64,7 @@ struct DatasetOpts
 
 struct Settings
 {
-	YAML::Node yaml = YAML::LoadFile("/home/jesse/code/cv_project_cpp/application_project/settings.yaml");
+	YAML::Node yaml = YAML::LoadFile("D:/self-studies/application_project/application_project/settings.yaml");
 	DatasetOpts mnistOpts = DatasetOpts(yaml);
 	std::string databasePath = "";
 

@@ -13,7 +13,13 @@ project ("application_project")
 
 add_subdirectory("application_project")
 
+message(STATUS "BUILD TYPE = ${CMAKE_BUILD_TYPE}")
 message(STATUS "\n\nThis is the start of the flags\n")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}\n\n")
+
+message(STATUS "OpenCV_VERSION = ${OpenCV_VERSION}")
+message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
+message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
+message(STATUS "OpenCV_LIBRARIES = ${OpenCV_LIBRARIES}")

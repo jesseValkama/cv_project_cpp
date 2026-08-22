@@ -13,7 +13,7 @@ target_include_directories(sqlite3
 target_include_directories(application_project 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${OPENCV_INCLUDE_DIRS}       
+        ${OpenCV_INCLUDE_DIRS}
 )
 target_link_libraries(application_project 
     PRIVATE "${TORCH_LIBRARIES}" 

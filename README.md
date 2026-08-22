@@ -53,13 +53,14 @@ First clone the repo
 git clone https://github.com/jesseValkama/cv_project_cpp
 ```
 
-To set up settings yaml file and experiments database, you need to:
+To set up a settings.yaml file, a directory for weights, and an experiments database, you need to:
 ```
 cd application_project
 cp settings-template.yaml settings.yaml
 touch experiments.db
+mkdir weights
 ```
-Then change settings.yaml
+Then change the settings.yaml
 
 Configure the program by using (cmake configure):
 ```

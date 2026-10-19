@@ -8,7 +8,7 @@
 
 #include "datasets/loader_funcs.h"
 
-#include "settings.h"
+#include "settings/settings.h"
 
 Batch MnistDataset::get(size_t i)
 {

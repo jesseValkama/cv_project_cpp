@@ -1,9 +1,9 @@
-#include "functions/common.h"
+#include "train/early_stop.h"
 
-#include <stdint.h>
+#include <cstddef>
 #include <iostream>
 
-bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp)
+bool early_stopping(const size_t mem, const size_t wait, const size_t epoch, const bool imp)
 {
 	static size_t dec = 0;
 	static bool active = false;
@@ -19,7 +19,6 @@ bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp)
 	{
 		dec = 0;
 	}
-
 	if (epoch < wait)
 	{
 		return false;
@@ -29,7 +28,6 @@ bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp)
 		std::cout << "Early stopping is now active" << "(" << dec << "/" << mem << ")" << std::endl;
 		active = true;
 	}
-
 	if (dec >= mem)
 	{
 		std::cout << "Early stopping stopped the training" << std::endl;

@@ -84,17 +84,17 @@ Run the program:
 ```
 where, args are:
 
-train: 0 || 1
+--train: 0 | 1
 
-test: 0 || 1
+--test: 0 | 1
 
-inference: 0 || 1
+--inference: 0 | 1
 
-xai: -2 (skip), -1 (gradcam), 0-n feature map index
+--visualtask: SKIP, Idx | GradCAM
 
-model: 1 (LeNet), 2 (ResNet)
+--model: LeNet | ResNet
 
-dataset: 1 (mnist), 2 (cifar10)
+--dataset: mnist | cifar10
 
 And after running experiments:
 ```

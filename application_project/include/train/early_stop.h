@@ -1,9 +1,9 @@
 #ifndef EARLYSTOP_H 
 #define EARLYSTOP_H
 
-#include <torch/torch.h>
+#include <cstddef>
 
-bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp);
+bool early_stopping(const size_t mem, const size_t wait, const size_t epoch, const bool imp);
 /*
 	* Returns condition whether to stop training
 	* Logic: if n amout of validations have passed in a row
@@ -20,4 +20,4 @@ bool early_stopping(size_t mem, size_t wait, size_t epoch, bool imp);
 	*	bool: whether to stop training or not
 */
 
-#endif
+#endif // EARLYSTOP_H

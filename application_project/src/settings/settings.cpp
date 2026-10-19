@@ -1,4 +1,4 @@
-#include "settings.h"
+#include "settings/settings.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -6,11 +6,11 @@ DatasetOpts::DatasetOpts(YAML::Node &yaml, ModelTypes modelType, DatasetTypes da
 {
 	switch (datasetType)
 	{
-		case DatasetTypes::MnistType:
+		case DatasetTypes::MNIST:
 			assign_from_mnist(modelType, yaml);
 			break;
 
-		case DatasetTypes::Cifar10Type:
+		case DatasetTypes::CIFAR10:
 			assign_from_cifar10(modelType, yaml);
 			break;
 	}
@@ -32,12 +32,12 @@ void DatasetOpts::assign_from_mnist(ModelTypes modelType, YAML::Node &yaml)
 	imgsz = yaml["mnist_train_settings"]["dataset_info"]["image_size"].as<int>();
 	switch (modelType)
 	{
-		case ModelTypes::LeNetType:
+		case ModelTypes::LENET:
 		{
 			imgresz = yaml["lenet_imgresz"].as<int>();
 			break;
 		}
-		case ModelTypes::ResNetType:
+		case ModelTypes::RESNET:
 		{
 			imgresz = yaml["resnet_imgresz"].as<int>();
 			break;
@@ -87,12 +87,12 @@ void DatasetOpts::assign_from_cifar10(ModelTypes modelType, YAML::Node &yaml)
 	imgsz = yaml["cifar10_train_settings"]["dataset_info"]["image_size"].as<int>();
 	switch (modelType)
 	{
-		case ModelTypes::LeNetType:
+		case ModelTypes::LENET:
 		{
 			imgresz = yaml["lenet_imgresz"].as<int>();
 			break;
 		}
-		case ModelTypes::ResNetType:
+		case ModelTypes::RESNET:
 		{
 			imgresz = yaml["resnet_imgresz"].as<int>();
 			break;
@@ -132,7 +132,8 @@ Settings::Settings(DatasetTypes datasetType, ModelTypes modelType)
 	warmupLen = yaml["general_settings"]["optimiser"]["warmup_length"].as<int>();
 	plateauWait = yaml["general_settings"]["optimiser"]["plateau_scheduler_activation_delay"].as<int>();
 
-	automatedMixedPrecision = yaml["general_settings"]["loop"]["amp"].as<bool>(); // NOT IN USE YET
+	amp = yaml["general_settings"]["loop"]["amp"].as<bool>();
+	gradScaler = yaml["general_settings"]["loop"]["grad_scaler"].as<bool>();
 
 	DatasetOpts datasetOpts(yaml, modelType, datasetType);
 	mnistOpts = datasetOpts;

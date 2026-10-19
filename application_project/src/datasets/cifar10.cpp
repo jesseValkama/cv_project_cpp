@@ -7,7 +7,7 @@
 #include <torch/torch.h>
 
 #include "augmentations/geometry.h"
-#include "settings.h"
+#include "settings/settings.h"
 #include "datasets/loader_funcs.h"
 
 Batch Cifar10Dataset::get(size_t i)

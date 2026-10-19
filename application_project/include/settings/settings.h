@@ -7,22 +7,36 @@
 #include <variant>
 #include <vector>
 
-#include <yaml-cpp/yaml.h>
 #include <torch/torch.h>
 
-// this is here to avoid headache with circular imports
+#include <yaml-cpp/yaml.h>
+
+constexpr const char *ANSI_END = "\033[0m";
+constexpr const char *ANSI_GREEN = "\033[32m";
+constexpr const char *ANSI_MAGENTA = "\033[35m";
+constexpr const char *ANSI_RED = "\033[31m";
+constexpr const char *ANSI_YELLOW = "\033[33m";
+
+// TODO: move
 enum DatasetTypes
 {
-	DatasetInitType = 0,
-	MnistType = 1,
-	Cifar10Type = 2
+	DS_INIT = 0,
+	MNIST = 1,
+	CIFAR10 = 2
 };
 
 enum ModelTypes
 {
-	ModelInitType = 0,
-	LeNetType = 1,
-	ResNetType = 2
+	MOD_INIT = 0,
+	LENET = 1,
+	RESNET = 2
+};
+
+enum VisualiserTasks
+{
+	SKIP = 0,
+    IDX = 1,
+    GRADCAM = 2
 };
 
 struct DatasetOpts
@@ -57,25 +71,28 @@ struct DatasetOpts
 	std::vector<double> mean = {};
 	std::vector<double> stdev = {};
 	
-	DatasetOpts(YAML::Node &yaml, ModelTypes modelType = ModelTypes::ModelInitType, DatasetTypes datasetType = DatasetTypes::DatasetInitType);
+	DatasetOpts(YAML::Node &yaml, ModelTypes modelType = ModelTypes::MOD_INIT, DatasetTypes datasetType = DatasetTypes::DS_INIT);
 	void assign_from_mnist(ModelTypes modelType, YAML::Node &yaml);
 	void assign_from_cifar10(ModelTypes modelType, YAML::Node &yaml);
 };
 
 struct Settings
 {
-	YAML::Node yaml = YAML::LoadFile("D:/self-studies/application_project/application_project/settings.yaml");
+	YAML::Node yaml = YAML::LoadFile("/home/jesse/code/cv_project_cpp/application_project/settings.yaml");
 	DatasetOpts mnistOpts = DatasetOpts(yaml);
 	std::string databasePath = "";
 
 	torch::Device dev = torch::cuda::is_available() ? torch::kCUDA : torch::kCPU;
+	c10::DeviceType devType = torch::cuda::is_available() ? c10::DeviceType::CUDA : c10::DeviceType::CPU; 
+	c10::ScalarType ampDtype = torch::kFloat16;
 	size_t minEpochs = 0;
 	size_t maxEpochs = 0;
 	size_t valInterval = 0;
 	float learningRate = 0.0;
 	float weightDecay = 0.0;
 	size_t IntervalsBeforeEarlyStopping = 0; // unnecessary for lenet, but could be useful for a more complex model
-	bool automatedMixedPrecision = false; // NOT IN USE YET
+	bool amp = false;
+	bool gradScaler = false;
 
 	int warmupLen = 0;
 	int plateauWait = 0;
@@ -83,4 +100,4 @@ struct Settings
 	Settings(DatasetTypes datasetType, ModelTypes modelType);
 };
 
-#endif
+#endif // SETTINGS_H

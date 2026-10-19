@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <torch/torch.h>
-#include "settings.h"
+#include "settings/settings.h"
 
 ConvBlockImpl::ConvBlockImpl(const ConvBlockParams &p)
 {

@@ -8,7 +8,7 @@
 #include <torch/torch.h>
 
 #include "models/common.h"
-#include "settings.h"
+#include "settings/settings.h"
 
 LeNetImpl::LeNetImpl(int imgsz, int64_t nCls, int64_t nc, bool fmvis)
 {

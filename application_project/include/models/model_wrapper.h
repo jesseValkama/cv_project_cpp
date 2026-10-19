@@ -9,9 +9,16 @@
 #include <variant>
 #include <vector>
 
-#include "../settings.h"
+#include "settings/settings.h"
 #include "lenet.h"
 #include "resnet.h"
+
+enum ModelRets
+{
+	MODEL_OK = 0,
+	MODEL_ERR_UNKNOWN = 10,
+	MODEL_ERR_SETUP = 11
+};
 
 typedef std::variant<LeNet, ResNet> Model;
 
@@ -22,7 +29,7 @@ class ModelWrapper
 		DatasetOpts mnistOpts;
 		std::string name = "none";
 
-		void create_model(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis = false);
+		int create_model(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis = false);
 		/*
 		* Method for creating a model, called internally by constructor method
 		*/

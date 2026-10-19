@@ -9,7 +9,7 @@
 #include <variant>
 #include <vector>
 
-#include "common.h"
+#include "models/common.h"
 
 namespace nn = torch::nn;
 

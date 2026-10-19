@@ -8,9 +8,10 @@
 #include <string>
 #include <vector>
 
+#include <ATen/autocast_mode.h>
 #include <torch/torch.h>
 
-#include "settings.h"
+#include "settings/settings.h"
 #include "models/lenet.h"
 #include "models/resnet.h"
 
@@ -23,27 +24,38 @@ namespace fs = std::filesystem;
 ModelWrapper::ModelWrapper(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis)
 	: mnistOpts(mnistOpts)
 {
-	create_model(modelType, mnistOpts, fmvis);
+	int ret = create_model(modelType, mnistOpts, fmvis);
+	if (ret != MODEL_OK)
+	{
+		std::abort();
+	}
 }
 
-void ModelWrapper::create_model(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis)
+int ModelWrapper::create_model(ModelTypes modelType, DatasetOpts mnistOpts, bool fmvis)
 {
 	switch (modelType)
 	{
-		case ModelTypes::LeNetType:
+		case ModelTypes::LENET:
+		{
 			model = LeNet(mnistOpts.imgresz, mnistOpts.numOfClasses, mnistOpts.numOfChannels, fmvis);
 			name = "LeNet";
 			break;
+		}
 
-		case ModelTypes::ResNetType:
+		case ModelTypes::RESNET:
+		{
 			model = ResNet(mnistOpts.imgresz, mnistOpts.numOfClasses, mnistOpts.numOfChannels, fmvis);
 			name = "ResNet";
 			break;
-
+		}
+			
 		default:
+		{
 			std::cout << "Unrecognised model type" << std::endl;
-			std::abort();
+			return MODEL_ERR_SETUP;	
+		}
 	}
+	return MODEL_OK;
 }
 
 void ModelWrapper::save_weights(std::string path)

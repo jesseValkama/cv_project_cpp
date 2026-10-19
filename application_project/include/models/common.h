@@ -9,7 +9,7 @@
 
 #include <torch/torch.h>
 
-#include "../settings.h"
+#include "settings/settings.h"
 
 namespace nn = torch::nn;
 

@@ -12,7 +12,7 @@
 
 #include "datasets/loader_funcs.h"
 #include "datasets/mnist.h"
-#include "settings.h"
+#include "settings/settings.h"
 
 std::pair<Info, Info> split_train_val_info(Info &trainValInfo, double trainProb, int bs, std::vector<int> &tidxs, std::vector<int> &vidxs)
 {
@@ -53,7 +53,7 @@ std::tuple<Info, Info, Info> load_dataset_info(DatasetTypes datasetType, Dataset
 	Info trainValInfo, testInfo;
 	switch (datasetType)
 	{
-		case DatasetTypes::MnistType:
+		case DatasetTypes::MNIST:
 		{
 			ret = load_mnist_info(datasetOpts, trainValInfo, "train");
 			if (ret != 0) { std::abort(); }
@@ -62,7 +62,7 @@ std::tuple<Info, Info, Info> load_dataset_info(DatasetTypes datasetType, Dataset
 			auto [trainInfo, valInfo] = split_train_val_info(trainValInfo, trainRatio, 10000, tidxs, vidxs);
 			return std::make_tuple(trainInfo, valInfo, testInfo);
 		}
-		case DatasetTypes::Cifar10Type:
+		case DatasetTypes::CIFAR10:
 		{
 			ret = load_cifar10_info(datasetOpts, trainValInfo, "train");
 			if (ret != 0) { std::abort(); }

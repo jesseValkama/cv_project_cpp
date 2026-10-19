@@ -8,10 +8,10 @@
 #include <variant>
 #include <vector>
 
-#include "../datasets/cifar10.h"
-#include "../datasets/loader_funcs.h"
-#include "../datasets/mnist.h"
-#include "../settings.h"
+#include "datasets/cifar10.h"
+#include "datasets/loader_funcs.h"
+#include "datasets/mnist.h"
+#include "settings/settings.h"
 
 namespace nn = torch::nn;
 

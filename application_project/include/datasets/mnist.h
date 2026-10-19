@@ -3,7 +3,7 @@
 
 #include <torch/torch.h>
 
-#include "loader_funcs.h"
+#include "datasets/loader_funcs.h"
 
 class MnistDataset : public torch::data::datasets::Dataset<MnistDataset>
 {

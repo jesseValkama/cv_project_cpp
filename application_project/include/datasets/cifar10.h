@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "loader_funcs.h"
-#include "../settings.h"
+#include "settings/settings.h"
 
 class Cifar10Dataset : public torch::data::datasets::Dataset<Cifar10Dataset>
 {

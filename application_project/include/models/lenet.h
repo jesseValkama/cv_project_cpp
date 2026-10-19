@@ -7,7 +7,7 @@
 #include <torch/torch.h>
 
 #include "common.h"
-#include "../settings.h"
+#include "settings/settings.h"
 
 namespace nn = torch::nn;
 namespace ti = torch::indexing;

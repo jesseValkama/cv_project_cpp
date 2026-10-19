@@ -7,9 +7,11 @@
 #include <stdint.h>
 #include <string>
 
-#include "../settings.h"
+#include "settings/settings.h"
+#include "visualise/common.h"
 
-int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg, int64_t label, double prob, DatasetOpts &datasetOpts, float imgWeight, bool save = true, std::string fname = "");
+int gradcam(torch::Tensor &imgs, torch::Tensor &featureMaps, std::unordered_map<std::string, torch::Tensor> &outputs,
+	DatasetOpts &dsOpts, fmvis::FeatureMapVisualiserOptions &fmopts);
 /*
 * Student's implementation for gradcam
 * Doesn't use hooks to make it simplier (not good for modularity)
@@ -26,8 +28,6 @@ int gradcam(torch::Tensor y, torch::Tensor &tfm, torch::Tensor &inputImg, int64_
 *	label: the label idx for the prediction
 *	prob: the probability for the prediction
 *	datasetOpts: settings for the dataset
-*	save: whether to save the visualisations
-*	fname: the name of the input img
 * 
 * Returns:
 *	0: successfull

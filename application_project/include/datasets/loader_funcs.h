@@ -10,7 +10,7 @@
 #include <opencv2/opencv.hpp>
 #include <torch/torch.h>
 
-#include "../settings.h"
+#include "settings/settings.h"
 
 typedef std::vector<std::pair<std::streampos, char>> Info;
 typedef torch::data::Example<> Batch;
@@ -197,14 +197,14 @@ torch::Tensor mat2Tensor(cv::Mat &img, int imgsz, int nc, int div = -1, bool toR
 *	Tensor: the output img
 */
 
-std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, int squeeze = -1, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {}, {} }, float imgMax = 255.0f);
+std::optional<cv::Mat> Tensor2mat(torch::Tensor timg, std::optional<int> squeeze = std::nullopt, bool toBGR = false, std::pair<std::vector<double>, std::vector<double>> scale = { {}, {} }, float imgMax = 255.0f);
 /*
 * Loads a tensor to a cv::Mat.
 * Denormalisation is also possible, default scale and imgMax values skip dernomalisation
 * 
 * Args:
 *	timg: img as a tensor
-*	squeeze: the index to squeeze from -1 to skip 
+*	squeeze: the index to squeeze from, nullopt to skip 
 *	toBGR: whether to transform from rgb2bgr or not
 *	scale: 1st mean and 2nd standard deviation for z-scaling
 *	imgMax: the max value for a pixel (needs to be <= 255), used in denormalising the image

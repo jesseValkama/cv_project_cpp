@@ -36,6 +36,9 @@ cmake_install.cmake
 Thumbs.db
 
 # Other/todo
+/application_project/weights
 /application_project/cifar10_inference
 /application_project/experiments.db
 /application_project/settings.yaml
+/application_project/src/functions/grad_scaler.cpp
+/application_project/include/functions/grad_scaler.h

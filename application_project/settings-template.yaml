@@ -91,7 +91,8 @@ general_settings:
     max_epochs: 10
     validation_interval: 1 # epoch % x == 0 ? validate : not
     early_stop_counter: 6 # not improved in a row to trigger early stop
-    amp: false # not implemented yet
+    amp: false
+    grad_scaler: false
   optimiser:
     learning_rate: 0.001
     weight_decay: 0.0005
